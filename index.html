@@ -1,0 +1,1097 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Elisabet · assistente educativa sobre apostas</title>
+<meta name="description" content="Elisabet é uma assistente educativa sobre apostas esportivas: tira dúvidas e simula o efeito das apostas no seu bolso ao longo do tempo.">
+<meta property="og:title" content="Elisabet · assistente educativa sobre apostas">
+<meta property="og:description" content="Entenda como funcionam as apostas, as odds e o impacto no seu bolso. Converse e simule cenários.">
+<meta name="theme-color" content="#0B0D10">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='8' fill='%230B0D10'/%3E%3Cg fill='%23C6F36B'%3E%3Crect x='9' y='9' width='7' height='30'/%3E%3Crect x='9' y='9' width='30' height='7'/%3E%3Crect x='9' y='20.5' width='22' height='7'/%3E%3Crect x='9' y='32' width='14' height='7'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DESIGN TOKENS — mude aqui para trocar cores e fontes do site todo
+   ============================================================ */
+:root {
+  --bg: #0B0D10;          /* fundo */
+  --surface: #14181D;     /* cartões */
+  --surface-2: #1C2128;   /* balões, chips */
+  --line: #262C33;        /* bordas */
+  --text: #F2F4F6;        /* texto principal */
+  --text-2: #D5DAE0;      /* texto de corpo */
+  --muted: #A3ABB5;       /* texto secundário */
+  --faint: #8E97A2;       /* legendas */
+  --accent: #C6F36B;      /* cor da marca (verde-limão) */
+  --accent-ink: #0B0D10;  /* texto em cima da cor da marca */
+  --loss: #FF5C5C;        /* perda */
+  --loss-soft: #FF8A8A;   /* texto de perda */
+  --save: #8FA0B3;        /* "só guardar" no gráfico */
+  --radius: 6px;
+  --font: 'Archivo', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --max: 780px;           /* largura máxima do conteúdo no computador */
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: var(--font); font-size: 16px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ============================================================
+   LAYOUT GERAL: cabeçalho (que começa como tela de abertura) + app
+   ============================================================ */
+.shell { height: 100dvh; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+
+.topo {
+  flex: 0 0 auto; height: 100dvh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
+  padding: 24px 16px;
+  transition: height .7s cubic-bezier(.65,0,.35,1), padding .7s, gap .7s;
+  position: relative;
+}
+.topo-linha { width: 100%; max-width: var(--max); display: flex; align-items: center; justify-content: center; gap: 12px; transition: justify-content .7s; }
+
+/* ---------- LOGO (um lugar só: trocar aqui troca o site todo) ---------- */
+.logo { display: flex; align-items: center; gap: .32em; font-size: clamp(40px, 11vw, 64px); transition: font-size .7s cubic-bezier(.65,0,.35,1); }
+.logo svg { color: var(--accent); width: 1.3em; height: 1.3em; flex: 0 0 auto; display: block; }
+.logo-t { font-weight: 900; letter-spacing: .04em; line-height: 1; display: flex; }
+.logo-t .elisa { color: var(--text); }
+.logo-t .bet { color: transparent; -webkit-text-stroke: max(1.2px, .035em) var(--accent); margin-left: .02em; }
+
+/* animação de entrada: barras se esticando (staggered animation) */
+.logo .b { transform-box: fill-box; transform-origin: left center; transform: scaleX(0); }
+.logo-t .elisa, .logo-t .bet { opacity: 0; transform: translateX(-.15em); display: inline-block; }
+.intro .logo .b { animation: esticar .45s cubic-bezier(.2,.8,.2,1) forwards; }
+.intro .logo .b1 { animation-delay: .10s; } .intro .logo .b2 { animation-delay: .30s; }
+.intro .logo .b3 { animation-delay: .50s; } .intro .logo .b4 { animation-delay: .70s; }
+.intro .logo-t .elisa { animation: surgir .4s ease-out .85s forwards; }
+.intro .logo-t .bet { animation: surgir .4s ease-out 1.2s forwards, piscar .6s ease-out 1.7s; }
+@keyframes esticar { to { transform: scaleX(1); } }
+@keyframes surgir { to { opacity: 1; transform: none; } }
+@keyframes piscar { 50% { -webkit-text-stroke-color: var(--text); } }
+
+.hero-extra { display: flex; flex-direction: column; align-items: center; gap: 22px; text-align: center; opacity: 0; transition: opacity .5s; }
+.intro .hero-extra { animation: surgir .6s ease-out 1.9s forwards; }
+.hero-extra p { margin: 0; color: var(--muted); font-size: 18px; max-width: 26ch; }
+.btn-comecar {
+  height: 52px; padding: 0 28px; border: 0; border-radius: var(--radius);
+  background: var(--accent); color: var(--accent-ink); font-weight: 900; font-size: 17px;
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.seta-baixo { color: var(--faint); animation: quicar 1.6s ease-in-out infinite; }
+@keyframes quicar { 50% { transform: translateY(6px); } }
+
+.acoes-topo { display: none; gap: 8px; margin-left: auto; }
+.btn-linha {
+  height: 44px; padding: 0 14px; border-radius: var(--radius);
+  border: 1px solid var(--line); background: transparent; color: var(--muted);
+  font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-linha:hover { color: var(--text); border-color: var(--muted); }
+.btn-linha.destaque { border-color: var(--accent); color: var(--accent); }
+
+/* ----- depois de "Começar": vira cabeçalho compacto ----- */
+.entrou .topo { height: 68px; padding: 0 16px; gap: 0; border-bottom: 1px solid var(--line); }
+.entrou .topo-linha { justify-content: flex-start; }
+.entrou .logo { font-size: 21px; }
+.entrou .logo .b, .entrou .logo-t .elisa, .entrou .logo-t .bet { animation: none; opacity: 1; transform: none; }
+.entrou .hero-extra { display: none; }
+.entrou .acoes-topo { display: flex; }
+
+.app { flex: 1 1 auto; min-height: 0; display: none; flex-direction: column; opacity: 0; }
+.entrou .app { display: flex; animation: surgir .5s ease-out .35s forwards; }
+
+/* ----- abas ----- */
+.abas { width: 100%; max-width: var(--max); margin: 0 auto; padding: 0 16px; display: flex; gap: 28px; border-bottom: 1px solid var(--line); }
+.aba {
+  height: 50px; padding: 0; border: 0; background: transparent;
+  border-bottom: 3px solid transparent; color: var(--muted); font-weight: 700; font-size: 16px;
+}
+.aba[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); font-weight: 800; }
+.painel { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.painel[hidden] { display: none; }
+
+/* ============================================================
+   CHAT
+   ============================================================ */
+.mensagens { flex: 1 1 auto; min-height: 0; overflow-y: auto; position: relative; }
+.mensagens-in { max-width: var(--max); margin: 0 auto; padding: 20px 16px 8px; display: flex; flex-direction: column; gap: 18px; }
+
+.msg-user {
+  align-self: flex-end; max-width: 82%; background: var(--surface-2); color: var(--text);
+  padding: 12px 14px; border-radius: var(--radius); font-weight: 500; white-space: pre-wrap; word-wrap: break-word;
+}
+.msg-bot { display: flex; flex-direction: column; gap: 6px; max-width: 100%; }
+.quem { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: .08em; color: var(--accent); }
+.texto { color: var(--text-2); }
+.texto p { margin: 0 0 10px; } .texto p:last-child { margin-bottom: 0; }
+.texto p:first-child { color: var(--text); font-weight: 700; font-size: 18px; line-height: 1.35; }
+.texto strong { color: var(--text); }
+.texto ul { margin: 0 0 10px; padding-left: 20px; }
+.texto li { margin-bottom: 4px; }
+
+.sugestoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.chip {
+  min-height: 44px; padding: 8px 14px; border-radius: var(--radius);
+  border: 1px solid var(--line); background: transparent; color: var(--text);
+  font-weight: 600; font-size: 15px; text-align: left;
+}
+.chip:hover:not(:disabled) { border-color: var(--accent); }
+.chip:disabled { opacity: .45; }
+
+.carregando { display: flex; flex-direction: column; gap: 8px; }
+.barra-indef { position: relative; height: 4px; width: min(220px, 60%); background: var(--surface-2); border-radius: 2px; overflow: hidden; }
+.barra-indef::after { content: ""; position: absolute; inset: 0; width: 40%; background: var(--accent); border-radius: 2px; animation: vaivem 1.1s ease-in-out infinite; }
+@keyframes vaivem { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
+.dica { font-size: 13px; color: var(--faint); }
+
+.aviso {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; color: var(--text-2);
+}
+.aviso.erro { border-color: #5a2a2a; }
+.aviso .btn-linha { align-self: flex-start; }
+
+/* cartão "quer ver isso em números?" */
+.cartao-sim { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.cartao-sim h3 { margin: 0; font-weight: 900; font-size: 20px; line-height: 1.2; }
+.pilulas { display: flex; flex-wrap: wrap; gap: 8px; }
+.pilula { font-family: var(--mono); font-size: 13px; font-weight: 600; padding: 6px 10px; border-radius: 4px; background: var(--surface-2); color: var(--text); }
+.pilula.falta { background: transparent; border: 1px dashed var(--loss); color: var(--loss-soft); }
+.linha-botoes { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-primario {
+  min-height: 50px; padding: 0 18px; border: 0; border-radius: var(--radius);
+  background: var(--accent); color: var(--accent-ink); font-weight: 900; font-size: 15px;
+}
+.btn-primario:disabled { opacity: .5; }
+.btn-secundario { min-height: 50px; padding: 0 18px; border: 1px solid var(--line); border-radius: var(--radius); background: transparent; color: var(--muted); font-weight: 700; font-size: 15px; }
+.cartao-sim .btn-primario { flex: 1.4 1 180px; } .cartao-sim .btn-secundario { flex: 1 1 120px; }
+.cartao-sim.fechado { opacity: .55; }
+
+.compositor { flex: 0 0 auto; border-top: 1px solid var(--line); background: var(--bg); }
+.compositor-in { max-width: var(--max); margin: 0 auto; padding: 10px 16px calc(12px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 8px; }
+.form-msg { display: flex; gap: 8px; align-items: flex-end; margin: 0; }
+.form-msg textarea {
+  flex: 1; min-height: 50px; max-height: 140px; resize: none; padding: 13px 14px;
+  border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface);
+  color: var(--text); font: 16px/1.4 var(--font);
+}
+.form-msg textarea::placeholder { color: var(--faint); }
+.btn-enviar { width: 50px; height: 50px; flex: 0 0 auto; border: 0; border-radius: var(--radius); background: var(--accent); display: grid; place-items: center; }
+.btn-enviar:disabled { opacity: .45; }
+.rodape { font-size: 12px; color: var(--faint); text-align: center; }
+
+/* ============================================================
+   SIMULADOR
+   ============================================================ */
+.sim-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; position: relative; }
+.sim { max-width: var(--max); margin: 0 auto; padding: 20px 16px 40px; display: flex; flex-direction: column; gap: 26px; }
+.sim-intro h2 { margin: 0 0 6px; font-size: 26px; font-weight: 900; line-height: 1.15; }
+.sim-intro p { margin: 0; color: var(--muted); }
+
+.campo { display: flex; flex-direction: column; gap: 10px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.campo legend, .campo .rotulo { padding: 0; font-weight: 800; font-size: 17px; margin-bottom: 10px; }
+.campo .ajuda { font-size: 14px; color: var(--muted); margin-top: -4px; }
+.grade { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); }
+.opcao {
+  min-height: 48px; padding: 6px 8px; border-radius: var(--radius); border: 1px solid var(--line);
+  background: transparent; color: var(--text); font-weight: 700; font-size: 15px; line-height: 1.2;
+}
+.opcao:hover { border-color: var(--muted); }
+.opcao[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 900; }
+.campo.faltando .grade { outline: 1px dashed var(--loss); outline-offset: 6px; border-radius: 4px; }
+.msg-falta { font-size: 14px; color: var(--loss-soft); display: none; }
+.campo.faltando .msg-falta { display: block; }
+
+.stepper { display: flex; align-items: center; gap: 8px; }
+.stepper button {
+  width: 50px; height: 50px; border-radius: var(--radius); border: 1px solid var(--line);
+  background: var(--surface); color: var(--text); font-size: 24px; font-weight: 700; display: grid; place-items: center; touch-action: manipulation;
+}
+.stepper button:disabled { opacity: .35; }
+.stepper output { min-width: 96px; text-align: center; font-family: var(--mono); font-weight: 600; font-size: 26px; }
+.leitura-odd { font-size: 14px; color: var(--muted); }
+.leitura-odd b { color: var(--text); font-family: var(--mono); font-weight: 600; }
+
+details.extra { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+details.extra > summary { list-style: none; cursor: pointer; padding: 14px 16px; font-weight: 800; display: flex; align-items: center; gap: 10px; min-height: 48px; }
+details.extra > summary::-webkit-details-marker { display: none; }
+details.extra > summary .mais { margin-left: auto; color: var(--muted); transition: transform .2s; }
+details.extra[open] > summary .mais { transform: rotate(45deg); }
+.extra-corpo { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 14px; color: var(--text-2); font-size: 15px; }
+.extra-corpo p { margin: 0; }
+.outra-odd { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.outra-odd .nome { font-weight: 700; min-width: 110px; }
+.btn-remover { width: 44px; height: 44px; border-radius: var(--radius); border: 1px solid var(--line); background: transparent; color: var(--muted); display: grid; place-items: center; }
+.soma { font-size: 14px; padding: 10px 12px; border-radius: var(--radius); background: var(--surface-2); }
+.soma b { font-family: var(--mono); font-weight: 600; }
+.soma.ruim { background: transparent; border: 1px solid var(--loss); color: var(--loss-soft); }
+
+.ajustes { font-size: 14px; color: var(--text-2); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.ajustes ul { margin: 6px 0 0; padding-left: 18px; }
+
+.progresso { display: flex; flex-direction: column; gap: 8px; }
+.barra { height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+.barra > div { height: 100%; width: 0; background: var(--accent); border-radius: 4px; transition: width .25s linear; }
+.progresso-txt { font-size: 14px; color: var(--muted); display: flex; justify-content: space-between; gap: 12px; }
+.progresso-txt span:last-child { font-family: var(--mono); }
+
+/* ----- resultado ----- */
+.resultado { display: flex; flex-direction: column; gap: 22px; scroll-margin-top: 12px; }
+.res-titulo { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: .08em; color: var(--accent); }
+.destaques { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.destaque { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.destaque .num { font-family: var(--mono); font-weight: 600; font-size: 28px; line-height: 1.1; color: var(--text); }
+.destaque .num.perda { color: var(--loss-soft); }
+.destaque .num.ganho { color: var(--accent); }
+.destaque .rot { font-size: 14px; color: var(--muted); }
+.res-texto { color: var(--text-2); display: flex; flex-direction: column; gap: 10px; }
+.res-texto p { margin: 0; }
+.res-texto strong { color: var(--text); }
+
+.grafico-caixa { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 12px 12px; }
+.grafico-caixa h3 { margin: 0 4px 4px; font-size: 18px; font-weight: 800; }
+.grafico-caixa .sub { margin: 0 4px 12px; font-size: 14px; color: var(--muted); }
+.legenda { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 0 4px 10px; font-size: 14px; color: var(--text-2); }
+.legenda span { display: inline-flex; align-items: center; gap: 8px; }
+.legenda i { display: inline-block; width: 22px; height: 0; border-top: 3px solid; }
+.legenda i.faixa { height: 12px; border: 0; background: rgba(255,92,92,.28); }
+#grafico { position: relative; width: 100%; }
+#grafico svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
+.dica-grafico {
+  position: absolute; pointer-events: none; background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+  padding: 8px 10px; font-size: 13px; line-height: 1.45; min-width: 170px; display: none; z-index: 2;
+}
+.dica-grafico b { font-family: var(--mono); font-weight: 600; }
+
+table.numeros { width: 100%; border-collapse: collapse; font-size: 15px; }
+table.numeros th, table.numeros td { text-align: left; padding: 12px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.numeros th { font-weight: 700; color: var(--text); }
+table.numeros th small { display: block; font-weight: 400; color: var(--muted); font-size: 13px; margin-top: 2px; }
+table.numeros td { font-family: var(--mono); font-weight: 600; white-space: nowrap; text-align: right; }
+
+.freio { border: 1px solid var(--accent); border-radius: 8px; padding: 14px 16px; color: var(--text-2); }
+.freio strong { color: var(--accent); }
+
+/* ----- computador: mais respiro ----- */
+@media (min-width: 720px) {
+  .sim-intro h2 { font-size: 32px; }
+  .texto p:first-child { font-size: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
+}
+</style>
+</head>
+<body>
+<div class="shell" id="shell">
+
+  <!-- ===== Abertura (vira o cabeçalho depois de "Começar") ===== -->
+  <header class="topo" id="topo">
+    <div class="topo-linha">
+      <div class="logo" role="img" aria-label="Elisabet">
+        <svg viewBox="0 0 48 48" aria-hidden="true">
+          <rect class="b b1" x="7" y="7" width="7" height="34" fill="currentColor"/>
+          <rect class="b b2" x="7" y="7" width="34" height="7" fill="currentColor"/>
+          <rect class="b b3" x="7" y="20.5" width="25" height="7" fill="currentColor"/>
+          <rect class="b b4" x="7" y="34" width="16" height="7" fill="currentColor"/>
+        </svg>
+        <span class="logo-t" aria-hidden="true"><span class="elisa">ELISA</span><span class="bet">BET</span></span>
+      </div>
+      <div class="acoes-topo">
+        <button class="btn-linha" id="btn-nova" type="button" title="Apaga a conversa e começa de novo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Nova conversa</span>
+        </button>
+      </div>
+    </div>
+    <div class="hero-extra">
+      <p>Assistente educativa sobre apostas esportivas</p>
+      <button class="btn-comecar" id="btn-comecar" type="button">
+        Começar
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+      <svg class="seta-baixo" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+  </header>
+
+  <!-- ===== App ===== -->
+  <div class="app" id="app">
+    <nav class="abas" role="tablist" aria-label="Seções">
+      <button class="aba" role="tab" id="aba-chat" aria-controls="painel-chat" aria-selected="true" type="button">Conversar</button>
+      <button class="aba" role="tab" id="aba-sim" aria-controls="painel-sim" aria-selected="false" type="button">Simulador</button>
+    </nav>
+
+    <!-- ----- Conversar ----- -->
+    <section class="painel" id="painel-chat" role="tabpanel" aria-labelledby="aba-chat">
+      <div class="mensagens" id="mensagens" aria-live="polite">
+        <div class="mensagens-in" id="lista"></div>
+      </div>
+      <div class="compositor">
+        <div class="compositor-in">
+          <form class="form-msg" id="form-msg">
+            <label for="entrada" class="sr-only">Sua pergunta</label>
+            <textarea id="entrada" rows="1" placeholder="Escreva sua pergunta…" autocomplete="off"></textarea>
+            <button class="btn-enviar" id="btn-enviar" type="submit" aria-label="Enviar">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B0D10" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+            </button>
+          </form>
+          <div class="rodape">Conteúdo educativo. Não é recomendação de aposta.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ----- Simulador ----- -->
+    <section class="painel" id="painel-sim" role="tabpanel" aria-labelledby="aba-sim" hidden>
+      <div class="sim-scroll" id="sim-scroll">
+        <div class="sim">
+          <div class="sim-intro">
+            <h2>Quanto as apostas pesam no seu bolso?</h2>
+            <p>Escolha o seu jeito de apostar. A gente simula milhares de cenários e compara com o que aconteceria se esse dinheiro fosse guardado.</p>
+          </div>
+
+          <fieldset class="campo" id="campo-valor">
+            <legend>Quanto você aposta por vez?</legend>
+            <div class="grade" data-campo="valor"></div>
+            <div class="msg-falta">Escolha um valor.</div>
+          </fieldset>
+
+          <fieldset class="campo" id="campo-freq">
+            <legend>Com que frequência?</legend>
+            <div class="grade" data-campo="freq"></div>
+            <div class="msg-falta">Escolha uma frequência.</div>
+          </fieldset>
+
+          <fieldset class="campo" id="campo-horiz">
+            <legend>Por quanto tempo?</legend>
+            <div class="grade" data-campo="horiz"></div>
+            <div class="msg-falta">Escolha um período.</div>
+          </fieldset>
+
+          <div class="campo" id="campo-odd">
+            <div class="rotulo" id="rot-odd">Qual a odd que você costuma pegar?</div>
+            <div class="ajuda">A odd é o número que multiplica o seu dinheiro se você acertar. Se não souber, deixe em 1,90.</div>
+            <div class="stepper" role="group" aria-labelledby="rot-odd">
+              <button type="button" data-passo="-1" data-alvo="odd" aria-label="Diminuir odd">−</button>
+              <output id="odd-valor" aria-live="polite">1,90</output>
+              <button type="button" data-passo="1" data-alvo="odd" aria-label="Aumentar odd">+</button>
+            </div>
+            <div class="leitura-odd" id="leitura-odd"></div>
+          </div>
+
+          <details class="extra" id="det-mercado">
+            <summary>Sabe as outras odds desse jogo? <small style="font-weight:500;color:var(--muted)">(opcional)</small><span class="mais" aria-hidden="true">+</span></summary>
+            <div class="extra-corpo">
+              <p>Num jogo de futebol, por exemplo, existem 3 resultados: vitória de um time, empate ou vitória do outro. Se você informar as odds dos <strong>outros</strong> resultados, a gente calcula quanto a casa está ficando nesse jogo específico (a <strong>margem da casa</strong>, ou <em>overround</em>). Se não informar, usamos 5,26%.</p>
+              <div id="outras-odds"></div>
+              <button type="button" class="btn-linha" id="btn-add-odd">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                Adicionar outra odd
+              </button>
+              <div class="soma" id="soma" hidden></div>
+            </div>
+          </details>
+
+          <div class="ajustes" id="ajustes" hidden></div>
+
+          <div class="linha-botoes">
+            <button type="button" class="btn-primario" id="btn-simular" style="flex:1">Simular</button>
+          </div>
+
+          <div class="progresso" id="progresso" hidden>
+            <div class="barra" role="progressbar" aria-label="Progresso da simulação" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="barra"></div></div>
+            <div class="progresso-txt"><span id="progresso-msg">Sorteando cenários…</span><span id="progresso-pct">0%</span></div>
+          </div>
+
+          <div id="sim-erro"></div>
+          <div class="resultado" id="resultado" hidden></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIGURAÇÃO — para usar o Elisabet RAG, troque só estes 2 endereços
+   ============================================================ */
+const URL_CHAT      = "https://marina-asilva.app.n8n.cloud/webhook/assistente-rag";
+const URL_SIMULADOR = "https://marina-asilva.app.n8n.cloud/webhook/simulador-rag";
+const MAX_HISTORICO = 6;          // quantas mensagens anteriores vão como contexto
+const TIMEOUT_CHAT  = 90000;      // 90 s
+const TIMEOUT_SIM   = 60000;      // 60 s
+
+const SAUDACAO = "Olá! Eu sou a Elisabet, uma assistente educativa sobre apostas esportivas.\n\nEstou aqui para ajudar você a entender como funcionam as apostas, as probabilidades e seus possíveis impactos financeiros. Também posso explicar conceitos, responder dúvidas e simular diferentes cenários.\n\nO que você gostaria de entender?";
+
+// botão curto → pergunta completa que vai pra Elisabet
+const SUGESTOES = [
+  ["Dá pra ganhar dinheiro apostando?", "É possível ganhar dinheiro apostando?"],
+  ["Depois de perder, fica mais fácil ganhar?", "Depois de perder várias apostas, minha chance de ganhar a próxima aumenta?"],
+  ["Entender de futebol diminui o risco?", "Conhecer muito de futebol elimina o risco de perder?"],
+  ["Apostas pequenas pesam no orçamento?", "Pequenas apostas frequentes podem afetar meu orçamento?"]
+];
+
+// opções do simulador (iguais às regras do n8n)
+const VALORES = [10, 20, 50, 100, 200];
+const FREQS = [
+  { id: "1x_mes",    rot: "1× por mês",    porSemana: 12 / 52, porAno: 12 },
+  { id: "2x_mes",    rot: "2× por mês",    porSemana: 24 / 52, porAno: 24 },
+  { id: "1x_semana", rot: "1× por semana", porSemana: 1,       porAno: 52 },
+  { id: "3x_semana", rot: "3× por semana", porSemana: 3,       porAno: 156 },
+  { id: "diario",    rot: "Todo dia",      porSemana: 7,       porAno: 364 }
+];
+const HORIZ = [1, 2, 3, 5, 10];
+const ODD_MIN = 1.10, ODD_MAX = 15.00, ODD_PASSO = 0.05, ODD_PADRAO = 1.90;
+const MARGEM_PADRAO = 2 / 1.90 - 1;   // 5,26%
+const TAXA_ANUAL = 0.10;
+
+/* ============================================================
+   Utilidades
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const brl0 = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+const brl2 = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const num1 = n => n.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const num2 = n => n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const pct = (x, d = 1) => (x * 100).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }) + "%";
+const anos = n => n === 1 ? "1 ano" : n + " anos";
+const arredOdd = o => Math.round(o * 20) / 20;
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+// Markdown simples: **negrito**, *itálico*, listas e parágrafos
+function formatar(texto) {
+  const blocos = esc(String(texto).trim()).split(/\n{2,}/);
+  const inline = t => t
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[^*])\*(?!\s)(.+?)\*(?!\*)/g, "$1<em>$2</em>");
+  const ehItem = l => /^\s*[-*•]\s+/.test(l);
+  return blocos.map(bloco => {
+    // agrupa linhas seguidas de lista num <ul>, o resto vira parágrafo
+    const partes = [];
+    bloco.split("\n").forEach(l => {
+      const tipo = ehItem(l) ? "ul" : "p";
+      const ult = partes[partes.length - 1];
+      if (ult && ult.tipo === tipo) ult.linhas.push(l); else partes.push({ tipo, linhas: [l] });
+    });
+    return partes.map(pt => pt.tipo === "ul"
+      ? "<ul>" + pt.linhas.map(l => "<li>" + inline(l.replace(/^\s*[-*•]\s+/, "")) + "</li>").join("") + "</ul>"
+      : "<p>" + pt.linhas.map(inline).join("<br>") + "</p>").join("");
+  }).join("");
+}
+
+/* ============================================================
+   Abertura → app
+   ============================================================ */
+const shell = $("#shell");
+requestAnimationFrame(() => shell.classList.add("intro"));
+let entrou = false;
+function entrar() {
+  if (entrou) return;
+  entrou = true;
+  shell.classList.add("entrou");
+  setTimeout(() => $("#entrada").focus({ preventScroll: true }), 900);
+}
+$("#btn-comecar").addEventListener("click", entrar);
+window.addEventListener("wheel", e => { if (!entrou && e.deltaY > 0) entrar(); }, { passive: true });
+let toqueY = null;
+window.addEventListener("touchstart", e => { toqueY = e.touches[0].clientY; }, { passive: true });
+window.addEventListener("touchmove", e => { if (!entrou && toqueY !== null && toqueY - e.touches[0].clientY > 30) entrar(); }, { passive: true });
+window.addEventListener("keydown", e => { if (!entrou && ["ArrowDown", "PageDown", " "].includes(e.key)) { e.preventDefault(); entrar(); } });
+
+/* ============================================================
+   Abas (trocar de aba NÃO apaga a conversa)
+   ============================================================ */
+function abrirAba(qual) {
+  const chat = qual === "chat";
+  $("#aba-chat").setAttribute("aria-selected", chat);
+  $("#aba-sim").setAttribute("aria-selected", !chat);
+  $("#painel-chat").hidden = !chat;
+  $("#painel-sim").hidden = chat;
+}
+$("#aba-chat").addEventListener("click", () => abrirAba("chat"));
+$("#aba-sim").addEventListener("click", () => abrirAba("sim"));
+document.querySelector(".abas").addEventListener("keydown", e => {
+  if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+    const ir = $("#aba-chat").getAttribute("aria-selected") === "true" ? "sim" : "chat";
+    abrirAba(ir); $(ir === "chat" ? "#aba-chat" : "#aba-sim").focus();
+  }
+});
+
+/* ============================================================
+   CHAT
+   ============================================================ */
+const lista = $("#lista"), caixa = $("#mensagens"), entrada = $("#entrada"), btnEnviar = $("#btn-enviar");
+let historico = [];      // { papel, texto } — só na memória: recarregar a página apaga
+let ocupado = false;
+
+function rolarFim() { caixa.scrollTop = caixa.scrollHeight; }
+
+function addUser(texto) {
+  const el = document.createElement("div");
+  el.className = "msg-user"; el.textContent = texto;
+  lista.appendChild(el); rolarFim();
+}
+function addBot(html) {
+  const el = document.createElement("div");
+  el.className = "msg-bot";
+  el.innerHTML = '<span class="quem">ELISABET</span><div class="texto">' + html + "</div>";
+  lista.appendChild(el); rolarFim();
+  return el;
+}
+
+function iniciarConversa() {
+  lista.innerHTML = "";
+  historico = [];
+  const el = addBot(formatar(SAUDACAO));
+  const sug = document.createElement("div");
+  sug.className = "sugestoes";
+  SUGESTOES.forEach(([curta, completa]) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.textContent = curta;
+    b.addEventListener("click", () => perguntar(completa));
+    sug.appendChild(b);
+  });
+  el.appendChild(sug);
+}
+
+function travar(sim) {
+  ocupado = sim;
+  btnEnviar.disabled = sim;
+  document.querySelectorAll(".chip").forEach(c => c.disabled = sim);
+}
+
+function mostrarCarregando() {
+  const el = document.createElement("div");
+  el.className = "msg-bot carregando";
+  el.innerHTML = '<span class="quem">ELISABET</span><div class="barra-indef" role="progressbar" aria-label="Elisabet está respondendo"></div>';
+  lista.appendChild(el); rolarFim();
+  const t = setTimeout(() => {
+    const d = document.createElement("span");
+    d.className = "dica"; d.textContent = "Consultando a base de conhecimento. Às vezes demora um pouquinho.";
+    el.appendChild(d); rolarFim();
+  }, 7000);
+  return () => { clearTimeout(t); el.remove(); };
+}
+
+async function perguntar(texto) {
+  texto = String(texto || "").trim();
+  if (!texto || ocupado) return;
+  travar(true);
+  addUser(texto);
+  const contexto = historico.slice(-MAX_HISTORICO).map(h => h.papel + ": " + h.texto).join("\n");
+  const parar = mostrarCarregando();
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_CHAT);
+  try {
+    const r = await fetch(URL_CHAT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mensagem: texto, historico: contexto }),
+      signal: ctrl.signal
+    });
+    if (!r.ok) throw new Error("status " + r.status);
+    const dados = await r.json();
+    parar();
+    if (dados && dados.indisponivel) {
+      mostrarIndisponivel(texto, dados.resposta);
+      return;
+    }
+    const resposta = dados && dados.resposta ? String(dados.resposta) : "";
+    if (!resposta) throw new Error("resposta vazia");
+    addBot(formatar(resposta));
+    historico.push({ papel: "Usuário", texto }, { papel: "Assistente", texto: resposta });
+    if (dados.sugerir_simulacao && dados.parametros) mostrarCartaoSim(dados.parametros);
+  } catch (e) {
+    parar();
+    const motivo = e.name === "AbortError" ? "A resposta demorou demais." : "Não consegui falar com a Elisabet.";
+    mostrarErroChat(texto, motivo + " Confira sua conexão e tente de novo.");
+    console.error(e);
+  } finally {
+    clearTimeout(timer);
+    travar(false);
+  }
+}
+
+function mostrarIndisponivel(texto, msg) {
+  mostrarErroChat(texto, msg || "A Elisabet está com muita demanda agora. Tente de novo em alguns segundos.", false);
+}
+function mostrarErroChat(texto, msg, ehErro = true) {
+  const el = document.createElement("div");
+  el.className = "aviso" + (ehErro ? " erro" : "");
+  el.innerHTML = "<div>" + esc(msg) + "</div>";
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "btn-linha destaque"; b.textContent = "Tentar de novo";
+  b.addEventListener("click", () => {
+    el.remove();
+    // remove a pergunta repetida da tela antes de reenviar
+    const ult = lista.querySelector(".msg-user:last-of-type");
+    if (ult && ult.textContent === texto) ult.remove();
+    perguntar(texto);
+  });
+  el.appendChild(b);
+  lista.appendChild(el); rolarFim();
+}
+
+$("#form-msg").addEventListener("submit", e => {
+  e.preventDefault();
+  const t = entrada.value;
+  if (!t.trim() || ocupado) return;
+  entrada.value = ""; ajustarAltura();
+  perguntar(t);
+});
+entrada.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("#form-msg").requestSubmit(); }
+});
+function ajustarAltura() { entrada.style.height = "auto"; entrada.style.height = Math.min(entrada.scrollHeight, 140) + "px"; }
+entrada.addEventListener("input", ajustarAltura);
+
+$("#btn-nova").addEventListener("click", () => {
+  if (ocupado) return;
+  iniciarConversa();
+  abrirAba("chat");
+  entrada.focus();
+});
+
+/* ----- Cartão "Quer ver isso em números?" ----- */
+// Converte o que a Elisabet extraiu da conversa para as opções dos botões
+function converterParametros(p) {
+  const out = { valor: null, freq: null, horiz: null, odd: null }, notas = [];
+  const maisPerto = (lista, x, log = false) => lista.reduce((a, b) =>
+    (log ? Math.abs(Math.log(b) - Math.log(x)) < Math.abs(Math.log(a) - Math.log(x))
+         : Math.abs(b - x) < Math.abs(a - x)) ? b : a);
+
+  if (p.valor) {
+    out.valor = maisPerto(VALORES, p.valor, true);
+    if (out.valor !== p.valor) notas.push("Valor: você falou " + brl2.format(p.valor) + ", usamos a opção mais próxima, " + brl0.format(out.valor) + ".");
+  }
+  if (p.periodo_freq) {
+    const n = p.apostas || 1;
+    const porSemana = p.periodo_freq === "dia" ? n * 7 : p.periodo_freq === "semana" ? n : n * 12 / 52;
+    const f = FREQS.reduce((a, b) => Math.abs(Math.log(b.porSemana) - Math.log(porSemana)) < Math.abs(Math.log(a.porSemana) - Math.log(porSemana)) ? b : a);
+    out.freq = f.id;
+    const exato = (p.periodo_freq === "mes" && (n === 1 || n === 2)) || (p.periodo_freq === "semana" && (n === 1 || n === 3)) || (p.periodo_freq === "dia" && n === 1);
+    if (!exato) notas.push("Frequência: usamos a opção mais próxima do que você contou, " + f.rot.toLowerCase() + ".");
+  }
+  if (p.horiz_anos) {
+    out.horiz = maisPerto(HORIZ, p.horiz_anos);
+    if (out.horiz !== p.horiz_anos) notas.push("Período: o simulador trabalha com anos inteiros, então usamos " + anos(out.horiz) + ".");
+  }
+  if (p.odd) {
+    const o = Math.min(ODD_MAX, Math.max(ODD_MIN, arredOdd(p.odd)));
+    out.odd = o;
+    if (Math.abs(o - p.odd) > 1e-9) notas.push("Odd: arredondamos " + num2(p.odd) + " para " + num2(o) + ".");
+  }
+  return { out, notas };
+}
+
+function mostrarCartaoSim(p) {
+  const { out, notas } = converterParametros(p);
+  const pil = [];
+  pil.push(out.valor ? '<span class="pilula">' + brl0.format(out.valor) + " / aposta</span>" : '<span class="pilula falta">valor: ?</span>');
+  pil.push(out.freq ? '<span class="pilula">' + FREQS.find(f => f.id === out.freq).rot + "</span>" : '<span class="pilula falta">frequência: ?</span>');
+  pil.push(out.horiz ? '<span class="pilula">' + anos(out.horiz) + "</span>" : '<span class="pilula falta">tempo: ?</span>');
+  if (out.odd) pil.push('<span class="pilula">odd ' + num2(out.odd) + "</span>");
+
+  const el = document.createElement("section");
+  el.className = "cartao-sim";
+  el.setAttribute("aria-label", "Sugestão de simulação");
+  el.innerHTML = "<h3>Quer ver isso em números?</h3><div class=\"pilulas\">" + pil.join("") + "</div>";
+  const linha = document.createElement("div");
+  linha.className = "linha-botoes";
+  const sim = document.createElement("button");
+  sim.type = "button"; sim.className = "btn-primario"; sim.textContent = "Simular com esses dados";
+  const nao = document.createElement("button");
+  nao.type = "button"; nao.className = "btn-secundario"; nao.textContent = "Não, obrigado";
+  sim.addEventListener("click", () => { abrirSimuladorCom(out, notas); });
+  nao.addEventListener("click", () => { el.classList.add("fechado"); sim.disabled = nao.disabled = true; });
+  linha.append(sim, nao);
+  el.appendChild(linha);
+  lista.appendChild(el); rolarFim();
+}
+
+/* ============================================================
+   SIMULADOR
+   ============================================================ */
+const estado = { valor: null, freq: null, horiz: null, odd: ODD_PADRAO, outras: [] };
+
+function montarOpcoes() {
+  const grades = {
+    valor: VALORES.map(v => [v, brl0.format(v)]),
+    freq: FREQS.map(f => [f.id, f.rot]),
+    horiz: HORIZ.map(h => [h, anos(h)])
+  };
+  for (const [campo, ops] of Object.entries(grades)) {
+    const g = document.querySelector('.grade[data-campo="' + campo + '"]');
+    ops.forEach(([v, rot]) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "opcao"; b.textContent = rot;
+      b.dataset.valor = v; b.setAttribute("aria-pressed", "false");
+      b.addEventListener("click", () => { escolher(campo, typeof v === "number" ? v : String(v)); });
+      g.appendChild(b);
+    });
+  }
+}
+function escolher(campo, v) {
+  estado[campo] = v;
+  document.querySelectorAll('.grade[data-campo="' + campo + '"] .opcao').forEach(b =>
+    b.setAttribute("aria-pressed", String(b.dataset.valor) === String(v)));
+  if (v !== null) $("#campo-" + campo).classList.remove("faltando");
+  if (campo === "valor") desenharOdd();
+}
+
+/* ----- odd (setinha) ----- */
+function passoOdd(o, dir) { return Math.min(ODD_MAX, Math.max(ODD_MIN, arredOdd(o + dir * ODD_PASSO))); }
+function desenharOdd() {
+  $("#odd-valor").textContent = num2(estado.odd);
+  document.querySelectorAll('[data-alvo="odd"]').forEach(b => {
+    b.disabled = (b.dataset.passo === "-1" && estado.odd <= ODD_MIN + 1e-9) || (b.dataset.passo === "1" && estado.odd >= ODD_MAX - 1e-9);
+  });
+  const v = estado.valor || 10;  // acompanha o valor escolhido (R$ 10 enquanto nenhum foi escolhido)
+  $("#leitura-odd").innerHTML = brl0.format(v) + " viram <b>" + brl2.format(v * estado.odd) + "</b> se acertar. A chance que essa odd sugere é <b>" + pct(1 / estado.odd) + "</b> (probabilidade implícita).";
+  desenharSoma();
+}
+// segurar o botão repete (bom no celular)
+function ligarRepeticao(btn, acao) {
+  let t1, t2;
+  const parar = () => { clearTimeout(t1); clearInterval(t2); };
+  btn.addEventListener("pointerdown", e => {
+    if (btn.disabled) return;
+    e.preventDefault(); acao();
+    t1 = setTimeout(() => { t2 = setInterval(() => { if (btn.disabled) return parar(); acao(); }, 70); }, 400);
+  });
+  ["pointerup", "pointerleave", "pointercancel"].forEach(ev => btn.addEventListener(ev, parar));
+  btn.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); acao(); } });
+}
+document.querySelectorAll('[data-alvo="odd"]').forEach(b =>
+  ligarRepeticao(b, () => { estado.odd = passoOdd(estado.odd, +b.dataset.passo); desenharOdd(); }));
+
+/* ----- outras odds (overround) ----- */
+function desenharOutras() {
+  const c = $("#outras-odds");
+  c.innerHTML = "";
+  estado.outras.forEach((o, i) => {
+    const linha = document.createElement("div");
+    linha.className = "outra-odd";
+    linha.innerHTML =
+      '<span class="nome">' + (i === 0 ? "Outro resultado" : "Mais um resultado") + '</span>' +
+      '<div class="stepper" role="group" aria-label="Odd do ' + (i === 0 ? "outro" : "terceiro") + ' resultado">' +
+      '<button type="button" data-passo="-1" aria-label="Diminuir">−</button><output>' + num2(o) + '</output>' +
+      '<button type="button" data-passo="1" aria-label="Aumentar">+</button></div>' +
+      '<button type="button" class="btn-remover" aria-label="Remover esta odd"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
+    linha.querySelectorAll(".stepper button").forEach(b => {
+      ligarRepeticao(b, () => {
+        estado.outras[i] = passoOdd(estado.outras[i], +b.dataset.passo);
+        linha.querySelector("output").textContent = num2(estado.outras[i]);
+        atualizarBotoesOutra(linha, i);
+        desenharSoma();
+      });
+    });
+    linha.querySelector(".btn-remover").addEventListener("click", () => { estado.outras.splice(i, 1); desenharOutras(); });
+    c.appendChild(linha);
+    atualizarBotoesOutra(linha, i);
+  });
+  $("#btn-add-odd").hidden = estado.outras.length >= 2;
+  desenharSoma();
+}
+function atualizarBotoesOutra(linha, i) {
+  const [menos, mais] = linha.querySelectorAll(".stepper button");
+  menos.disabled = estado.outras[i] <= ODD_MIN + 1e-9;
+  mais.disabled = estado.outras[i] >= ODD_MAX - 1e-9;
+}
+$("#btn-add-odd").addEventListener("click", () => {
+  if (estado.outras.length < 2) { estado.outras.push(estado.outras.length === 0 ? 3.40 : 3.60); desenharOutras(); }
+});
+function somaImplicita() { return 1 / estado.odd + estado.outras.reduce((s, o) => s + 1 / o, 0); }
+function mercadoInvalido() { return estado.outras.length > 0 && somaImplicita() < 1 - 1e-12; }
+function desenharSoma() {
+  const el = $("#soma");
+  if (!estado.outras.length) { el.hidden = true; if (!simulando) $("#btn-simular").disabled = false; return; }
+  el.hidden = false;
+  const s = somaImplicita();
+  if (s < 1) {
+    el.className = "soma ruim";
+    el.innerHTML = "Essas odds somam <b>" + pct(s) + "</b> de probabilidade implícita. Num mercado real a soma é sempre <b>100% ou mais</b>: a parte que passa de 100% é a margem da casa. Confira as odds" + (estado.outras.length < 2 ? " ou adicione o resultado que está faltando (num jogo de futebol, são 3)." : ".");
+  } else {
+    el.className = "soma";
+    el.innerHTML = "Soma das probabilidades implícitas: <b>" + pct(s) + "</b>. Ou seja, a casa fica com uma margem de <b>" + pct(s - 1) + "</b> nesse jogo (overround).";
+  }
+  if (!simulando) $("#btn-simular").disabled = s < 1;
+}
+
+/* ----- abrir o simulador já preenchido (vindo do chat) ----- */
+function abrirSimuladorCom(p, notas) {
+  if (p.valor) escolher("valor", p.valor);
+  if (p.freq) escolher("freq", p.freq);
+  if (p.horiz) escolher("horiz", p.horiz);
+  if (p.odd) { estado.odd = p.odd; desenharOdd(); }
+  const aj = $("#ajustes");
+  if (notas.length) {
+    aj.hidden = false;
+    aj.innerHTML = "<strong>Ajustamos alguns dados da conversa para as opções do simulador:</strong><ul>" + notas.map(n => "<li>" + esc(n) + "</li>").join("") + "</ul>";
+  } else { aj.hidden = true; }
+  abrirAba("sim");
+  const falta = ["valor", "freq", "horiz"].filter(k => estado[k] === null);
+  if (falta.length) {
+    falta.forEach(k => $("#campo-" + k).classList.add("faltando"));
+    $("#campo-" + falta[0]).scrollIntoView({ behavior: "smooth", block: "center" });
+  } else {
+    $("#sim-scroll").scrollTop = 0;
+    simular();
+  }
+}
+
+/* ----- chamar o n8n ----- */
+let simulando = false, timerProg = null;
+function iniciarProgresso(nApostas, traj) {
+  // estimativa de tempo: medida nos testes (~11 s no pior caso)
+  const est = Math.max(2.5, 1.5 + nApostas * traj / 1.9e6);
+  const t0 = performance.now();
+  $("#progresso").hidden = false;
+  const barra = $("#barra"), cx = document.querySelector(".barra");
+  const msgs = [[0, "Preparando a simulação…"], [0.12, "Sorteando " + traj.toLocaleString("pt-BR") + " cenários…"], [0.7, "Calculando os resultados…"]];
+  const passo = () => {
+    const f = (performance.now() - t0) / 1000 / est;
+    const p = Math.min(0.95, f < 1 ? f * 0.9 : 0.9 + (1 - Math.exp(-(f - 1))) * 0.05);
+    barra.style.width = (p * 100).toFixed(1) + "%";
+    cx.setAttribute("aria-valuenow", Math.round(p * 100));
+    $("#progresso-pct").textContent = Math.round(p * 100) + "%";
+    $("#progresso-msg").textContent = msgs.filter(m => f >= m[0]).pop()[1];
+  };
+  passo();
+  timerProg = setInterval(passo, 120);
+}
+function terminarProgresso(ok) {
+  clearInterval(timerProg);
+  if (ok) {
+    $("#barra").style.width = "100%"; $("#progresso-pct").textContent = "100%";
+    setTimeout(() => { $("#progresso").hidden = true; $("#barra").style.width = "0"; }, 400);
+  } else { $("#progresso").hidden = true; $("#barra").style.width = "0"; }
+}
+
+async function simular() {
+  if (simulando) return;
+  const falta = ["valor", "freq", "horiz"].filter(k => estado[k] === null);
+  falta.forEach(k => $("#campo-" + k).classList.add("faltando"));
+  if (falta.length) { $("#campo-" + falta[0]).scrollIntoView({ behavior: "smooth", block: "center" }); return; }
+  if (mercadoInvalido()) { $("#det-mercado").open = true; $("#soma").scrollIntoView({ behavior: "smooth", block: "center" }); return; }
+
+  const f = FREQS.find(x => x.id === estado.freq);
+  const nApostas = f.porAno * estado.horiz;
+  const traj = nApostas > 2000 ? 5000 : 10000;
+  simulando = true;
+  $("#btn-simular").disabled = true;
+  $("#sim-erro").innerHTML = "";
+  $("#resultado").hidden = true;
+  iniciarProgresso(nApostas, traj);
+  $("#progresso").scrollIntoView({ behavior: "smooth", block: "center" });
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_SIM);
+  try {
+    const corpo = { valor: estado.valor, freq: estado.freq, horiz: estado.horiz, odd: arredOdd(estado.odd), odds_outros: estado.outras.map(arredOdd) };
+    const r = await fetch(URL_SIMULADOR, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo), signal: ctrl.signal });
+    let dados = null;
+    try { dados = await r.json(); } catch (_) {}
+    if (!r.ok) throw Object.assign(new Error("status " + r.status), { msg: dados && dados.erro });
+    if (!dados || !dados.simulado || !dados.serie) throw new Error("resposta incompleta");
+    terminarProgresso(true);
+    mostrarResultado(dados);
+  } catch (e) {
+    terminarProgresso(false);
+    const msg = e.msg || (e.name === "AbortError" ? "A simulação demorou demais." : "Não consegui falar com o simulador. Confira sua conexão e tente de novo.");
+    $("#sim-erro").innerHTML = '<div class="aviso erro"><div>' + esc(msg) + "</div></div>";
+    console.error(e);
+  } finally {
+    clearTimeout(timer);
+    simulando = false;
+    $("#btn-simular").disabled = mercadoInvalido();
+  }
+}
+$("#btn-simular").addEventListener("click", simular);
+
+/* ----- resultado ----- */
+let ultimo = null;
+function mostrarResultado(d) {
+  ultimo = d;
+  const s = d.simulado, a = d.alternativo;
+  const f = FREQS.find(x => x.id === d.freq_opcao) || FREQS.find(x => x.id === estado.freq);
+  const totalApostado = d.valor * d.n_apostas;
+  const med = s.mediana;
+  const medTxt = med < 0 ? "<strong>" + brl0.format(-med) + " de prejuízo</strong>" : med > 0 ? "<strong>" + brl0.format(med) + " de lucro</strong>" : "<strong>empatado</strong>";
+  const faixa = v => v < 0 ? "perder " + brl0.format(-v) : v > 0 ? "ganhar " + brl0.format(v) : "empatar";
+  const margemTxt = d.mercado_informado
+    ? "Pelas odds que você informou, a margem da casa nesse jogo é de <strong>" + pct(d.margem_usada, 2) + "</strong>."
+    : "Usamos uma margem de <strong>5,26%</strong>, que é o que a casa ganha num jogo equilibrado pagando odd 1,90 dos dois lados. É uma estimativa <em>conservadora</em>, ou seja, mais favorável a você do que a realidade: segundo o Banco Central, as casas ficaram com cerca de 15% de tudo o que foi apostado no Brasil.";
+
+  const el = $("#resultado");
+  el.innerHTML = `
+    <div class="res-titulo">RESULTADO · ${esc(brl0.format(d.valor))} · ${esc(f.rot.toLowerCase())} · ${esc(anos(d.horiz))} · odd ${esc(num2(d.odd))}</div>
+
+    <div class="destaques">
+      <div class="destaque"><span class="num">${brl0.format(totalApostado)}</span><span class="rot">apostados no total (${d.n_apostas.toLocaleString("pt-BR")} apostas)</span></div>
+      <div class="destaque"><span class="num ${med < 0 ? "perda" : ""}">${med < 0 ? "−" : med > 0 ? "+" : ""}${brl0.format(Math.abs(med))}</span><span class="rot">resultado no caso típico (mediana)</span></div>
+      <div class="destaque"><span class="num ${s.prob_perda >= 0.5 ? "perda" : ""}">${pct(s.prob_perda, 0)}</span><span class="rot">dos cenários terminam no prejuízo</span></div>
+    </div>
+
+    <div class="res-texto">
+      <p>Apostando ${esc(brl0.format(d.valor))} ${esc(f.rot.toLowerCase())} durante ${esc(anos(d.horiz))}, você colocaria <strong>${brl0.format(totalApostado)}</strong> nas apostas. No caso típico, terminaria com ${medTxt}.</p>
+      <p>Em <strong>${pct(s.prob_perda, 0)}</strong> dos ${d.trajetorias.toLocaleString("pt-BR")} cenários sorteados, o resultado final foi prejuízo. Na faixa mais comum (90% dos cenários), o resultado vai de ${faixa(s.p5)} a ${faixa(s.p95)}.</p>
+      <p>Se você investisse esse mesmo dinheiro rendendo 10% ao ano, teria <strong>${brl0.format(a.investido_final)}</strong>: ${brl0.format(a.rendimento)} a mais do que colocou.</p>
+      <p>Quanto mais tempo e mais frequência, mais a margem da casa pesa: a perda esperada cresce junto com o número de apostas.</p>
+    </div>
+
+    <div class="grafico-caixa">
+      <h3>O dinheiro ao longo do tempo</h3>
+      <p class="sub">Quanto você teria, somando tudo o que colocou, em cada caminho.</p>
+      <div class="legenda" aria-hidden="true">
+        <span><i style="border-color:var(--accent)"></i>Investindo a 10% ao ano</span>
+        <span><i style="border-color:var(--save);border-top-style:dashed"></i>Só guardando</span>
+        <span><i style="border-color:var(--loss)"></i>Apostando (caso típico)</span>
+        <span><i class="faixa"></i>Apostando (90% dos cenários)</span>
+      </div>
+      <div id="grafico"></div>
+    </div>
+
+    <div>
+      <table class="numeros">
+        <caption class="sr-only">Os números da simulação</caption>
+        <tbody>
+          <tr><th>Chance de acertar cada aposta<small>Vem da odd, descontada a margem da casa.</small></th><td>${pct(d.p)}</td></tr>
+          <tr><th>Valor esperado por aposta<small>A média do que acontece se você repetir essa aposta muitas vezes.</small></th><td>${d.VE < 0 ? "−" : ""}${brl2.format(Math.abs(d.VE))}</td></tr>
+          <tr><th>Perda esperada no período<small>Valor esperado × número de apostas.</small></th><td>${d.VE_total < 0 ? "−" : ""}${brl0.format(Math.abs(d.VE_total))}</td></tr>
+          <tr><th>Resultado médio nos cenários<small>Deve ficar perto da perda esperada (lei dos grandes números).</small></th><td>${s.media < 0 ? "−" : ""}${brl0.format(Math.abs(s.media))}</td></tr>
+          <tr><th>Desvio-padrão<small>O quanto os resultados se espalham em volta da média: quanto maior, mais imprevisível.</small></th><td>${brl0.format(s.dp)}</td></tr>
+          <tr><th>Pior momento, em média<small>O saldo mais baixo que cada cenário chegou a ter no meio do caminho.</small></th><td>${s.pior_queda_media < 0 ? "−" : ""}${brl0.format(Math.abs(s.pior_queda_media))}</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="freio">
+      <strong>Quer colocar um freio?</strong> As casas autorizadas no Brasil são obrigadas a oferecer ferramentas de jogo responsável, como <strong>limite de depósito</strong> e <strong>autoexclusão</strong>.
+    </div>
+
+    <details class="extra">
+      <summary>Como essa simulação foi feita<span class="mais" aria-hidden="true">+</span></summary>
+      <div class="extra-corpo">
+        <p>Simulações não adivinham o futuro. Elas mostram o que <em>costuma</em> acontecer quando a gente repete um mesmo padrão muitas vezes. Para isso, partimos de algumas suposições:</p>
+        <ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px">
+          <li><strong>A casa fica com uma parte de cada aposta.</strong> ${margemTxt}</li>
+          <li><strong>Sua chance de acertar vem da odd.</strong> Com odd ${num2(d.odd)} e essa margem, a chance de acerto fica em <strong>${pct(d.p)}</strong>. A gente não pergunta "quanto você acha que acerta", porque todo mundo tende a se achar melhor do que é.</li>
+          <li><strong>Cada aposta é independente.</strong> Perder ou ganhar uma não muda a chance da próxima.</li>
+          <li><strong>Você aposta sempre o mesmo valor, na mesma frequência.</strong> Na vida real, quem tenta recuperar perdas aumenta o valor, e aí o prejuízo costuma ser maior.</li>
+          <li><strong>O dinheiro investido rende 10% ao ano.</strong> É só uma referência de quanto esse dinheiro poderia render em outro lugar (o <em>custo de oportunidade</em>), não uma recomendação de investimento. Não descontamos impostos nem inflação.</li>
+          <li><strong>Sorteamos ${d.trajetorias.toLocaleString("pt-BR")} histórias diferentes com esse padrão (simulação de Monte Carlo).</strong> A linha do meio mostra o caso típico (a mediana), e a faixa em volta mostra até onde dá pra ir com sorte ou com azar (os percentis de 5% e 95%).</li>
+        </ul>
+      </div>
+    </details>`;
+  el.hidden = false;
+  desenharGrafico(d);
+  setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+}
+
+/* ============================================================
+   GRÁFICO EM SVG (desenhado à mão)
+   ============================================================ */
+function desenharGrafico(d) {
+  const caixaG = $("#grafico");
+  const W = Math.max(300, caixaG.clientWidth || 600);
+  const H = Math.round(Math.min(420, Math.max(260, W * 0.55)));
+  const m = { t: 14, r: 12, b: 34, l: 64 };
+  const ser = d.serie;
+  const n = ser.guardar.length;               // períodos + 1
+  const porAno = d.freq_unid === "semana" ? 52 : 12;
+  const ys = [].concat(ser.investir, ser.guardar, ser.apostas_p5, ser.apostas_p95);
+  let yMin = Math.min(0, ...ys), yMax = Math.max(...ys);
+  const passoY = passoBonito((yMax - yMin) / 5);
+  yMin = Math.floor(yMin / passoY) * passoY; yMax = Math.ceil(yMax / passoY) * passoY;
+  const x = i => m.l + (i / (n - 1)) * (W - m.l - m.r);
+  const y = v => m.t + (1 - (v - yMin) / (yMax - yMin)) * (H - m.t - m.b);
+  const linha = arr => arr.map((v, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(v).toFixed(1)).join("");
+  const faixa = linha(ser.apostas_p95) + ser.apostas_p5.map((v, i) => [i, v]).reverse().map(([i, v]) => "L" + x(i).toFixed(1) + " " + y(v).toFixed(1)).join("") + "Z";
+
+  let grade = "";
+  for (let v = yMin; v <= yMax + 1e-6; v += passoY) {
+    grade += `<line x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}" stroke="${v === 0 ? "#3A424C" : "#20262D"}" stroke-width="1"/>`;
+    grade += `<text x="${m.l - 8}" y="${y(v) + 4}" text-anchor="end" fill="#8E97A2" font-family="IBM Plex Mono, monospace" font-size="12">${rotuloReais(v)}</text>`;
+  }
+  const totalAnos = (n - 1) / porAno;
+  const maxRot = Math.max(3, Math.floor((W - m.l - m.r) / 60));
+  const passoAno = [0.25, 0.5, 1, 2, 5].find(st => totalAnos / st + 1 <= maxRot) || 5;
+  for (let t = 0; t <= totalAnos + 1e-9; t += passoAno) {
+    const xi = x(t * porAno);
+    const rot = t === 0 ? "hoje" : (Number.isInteger(t) ? t + (t === 1 ? " ano" : " anos") : Math.round(t * 12) + " meses");
+    grade += `<text x="${xi}" y="${H - 10}" text-anchor="${t === 0 ? "start" : t >= totalAnos - 1e-9 ? "end" : "middle"}" fill="#8E97A2" font-size="12" font-family="Archivo, sans-serif">${rot}</text>`;
+  }
+
+  const desc = `Gráfico: investindo a 10% ao ano termina em ${brl0.format(ser.investir[n - 1])}; só guardando, ${brl0.format(ser.guardar[n - 1])}; apostando, no caso típico, ${brl0.format(ser.apostas_mediana[n - 1])}, com 90% dos cenários entre ${brl0.format(ser.apostas_p5[n - 1])} e ${brl0.format(ser.apostas_p95[n - 1])}.`;
+  caixaG.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(desc)}">
+      ${grade}
+      <path d="${faixa}" fill="rgba(255,92,92,.22)" stroke="none"/>
+      <path d="${linha(ser.guardar)}" fill="none" stroke="#8FA0B3" stroke-width="2" stroke-dasharray="6 5"/>
+      <path d="${linha(ser.investir)}" fill="none" stroke="#C6F36B" stroke-width="3" stroke-linejoin="round"/>
+      <path d="${linha(ser.apostas_mediana)}" fill="none" stroke="#FF5C5C" stroke-width="3" stroke-linejoin="round"/>
+      <line id="g-cursor" x1="0" x2="0" y1="${m.t}" y2="${H - m.b}" stroke="#A3ABB5" stroke-width="1" visibility="hidden"/>
+      <rect id="g-alvo" x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}" fill="transparent"/>
+    </svg>
+    <div class="dica-grafico" id="g-dica"></div>`;
+
+  // passar o dedo/mouse mostra os valores daquele momento
+  const svg = caixaG.querySelector("svg"), cursor = svg.querySelector("#g-cursor"), dica = $("#g-dica");
+  const mover = ev => {
+    const r = svg.getBoundingClientRect();
+    const px = (ev.clientX - r.left) * (W / r.width);
+    const i = Math.max(0, Math.min(n - 1, Math.round((px - m.l) / (W - m.l - m.r) * (n - 1))));
+    cursor.setAttribute("x1", x(i)); cursor.setAttribute("x2", x(i)); cursor.setAttribute("visibility", "visible");
+    const t = i / porAno;
+    const quando = i === 0 ? "Hoje" : t < 1 ? "Depois de " + Math.round(t * 12) + (Math.round(t * 12) === 1 ? " mês" : " meses") : "Depois de " + num1(t).replace(",0", "") + (t === 1 ? " ano" : " anos");
+    dica.innerHTML = `<div style="color:var(--muted);margin-bottom:4px">${quando}</div>
+      <div><span style="color:#C6F36B">■</span> Investindo: <b>${brl0.format(ser.investir[i])}</b></div>
+      <div><span style="color:#8FA0B3">■</span> Só guardando: <b>${brl0.format(ser.guardar[i])}</b></div>
+      <div><span style="color:#FF5C5C">■</span> Apostando: <b>${brl0.format(ser.apostas_mediana[i])}</b></div>`;
+    dica.style.display = "block";
+    const cx = x(i) * r.width / W;
+    const larg = dica.offsetWidth;
+    dica.style.left = Math.min(r.width - larg - 4, Math.max(4, cx + (cx > r.width / 2 ? -larg - 12 : 12))) + "px";
+    dica.style.top = "8px";
+  };
+  const sair = () => { cursor.setAttribute("visibility", "hidden"); dica.style.display = "none"; };
+  svg.addEventListener("pointermove", mover);
+  svg.addEventListener("pointerdown", mover);
+  svg.addEventListener("pointerleave", sair);
+}
+function passoBonito(bruto) {
+  const p = Math.pow(10, Math.floor(Math.log10(Math.max(bruto, 1))));
+  const r = bruto / p;
+  return (r <= 1 ? 1 : r <= 2 ? 2 : r <= 2.5 ? 2.5 : r <= 5 ? 5 : 10) * p;
+}
+function rotuloReais(v) {
+  const a = Math.abs(v), s = v < 0 ? "−" : "";
+  if (a >= 1e6) return s + "R$" + num1(a / 1e6).replace(",0", "") + "mi";
+  if (a >= 1e3) return s + "R$" + (a / 1e3).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + "mil";
+  return s + "R$" + Math.round(a);
+}
+let tRedim;
+window.addEventListener("resize", () => { clearTimeout(tRedim); tRedim = setTimeout(() => { if (ultimo && !$("#resultado").hidden) desenharGrafico(ultimo); }, 150); });
+
+/* ============================================================
+   Início
+   ============================================================ */
+montarOpcoes();
+desenharOdd();
+desenharOutras();
+iniciarConversa();
+</script>
+</body>
+</html>
