@@ -981,15 +981,15 @@ function mostrarResultado(d) {
 
     <div class="destaques">
       <div class="destaque"><span class="num">${brl0.format(totalApostado)}</span><span class="rot">apostados no total (${d.n_apostas.toLocaleString("pt-BR")} apostas)</span></div>
-      <div class="destaque"><span class="num ${med < 0 ? "perda" : ""}">${med < 0 ? "−" : med > 0 ? "+" : ""}${brl0.format(Math.abs(med))}</span><span class="rot">resultado no caso típico (mediana)</span></div>
-      <div class="destaque"><span class="num ${s.prob_perda >= 0.5 ? "perda" : ""}">${pct(s.prob_perda, 0)}</span><span class="rot">dos cenários terminam no prejuízo</span></div>
+      <div class="destaque"><span class="num ${med < 0 ? "perda" : ""}">${med < 0 ? "−" : med > 0 ? "+" : ""}${brl0.format(Math.abs(med))}</span><span class="rot">resultado típico${info("É a <b>mediana</b>: o resultado do meio. Metade das pessoas simuladas terminou melhor que isso e metade terminou pior.")}</span></div>
+      <div class="destaque"><span class="num ${s.prob_perda >= 0.5 ? "perda" : ""}">${emCada10(s.prob_perda).replace(" cada", "")}</span><span class="rot">pessoas simuladas terminaram no prejuízo${info("Exatamente <b>" + pct(s.prob_perda, 1) + "</b> das " + d.trajetorias.toLocaleString("pt-BR") + " simulações terminaram no prejuízo.")}</span></div>
     </div>
 
     <div class="res-texto">
-      <p>Apostando ${esc(brl0.format(d.valor))} ${esc(f.rot.toLowerCase())} durante ${esc(anos(d.horiz))}, você colocaria <strong>${brl0.format(totalApostado)}</strong> nas apostas. No caso típico, terminaria com ${medTxt}.</p>
-      <p>Em <strong>${pct(s.prob_perda, 0)}</strong> dos ${d.trajetorias.toLocaleString("pt-BR")} cenários sorteados, o resultado final foi prejuízo. Na faixa mais comum (90% dos cenários), o resultado vai de ${faixa(s.p5)} a ${faixa(s.p95)}.</p>
+      <p>Apostando ${esc(brl0.format(d.valor))} ${esc(f.rot.toLowerCase())} durante ${esc(anos(d.horiz))}, você colocaria <strong>${brl0.format(totalApostado)}</strong> nas apostas. No resultado típico, terminaria com ${medTxt}.</p>
+      <p>Simulamos ${d.trajetorias.toLocaleString("pt-BR")} pessoas apostando desse jeito: <strong>${emCada10(s.prob_perda)}</strong> terminaram no prejuízo. Tirando os casos de mais azar e de mais sorte, 9 em cada 10 pessoas terminaram entre ${faixa(s.p5)} e ${faixa(s.p95)}.${info("Essa faixa vai do <b>percentil 5</b> ao <b>percentil 95</b>: 5% das simulações terminaram abaixo dela e 5% acima.")}</p>
       <p>Se você investisse esse mesmo dinheiro rendendo 10% ao ano, teria <strong>${brl0.format(a.investido_final)}</strong>: ${brl0.format(a.rendimento)} a mais do que colocou.</p>
-      <p>Quanto mais tempo e mais frequência, mais a margem da casa pesa: a perda esperada cresce junto com o número de apostas.</p>
+      <p>Quanto mais tempo e mais vezes você aposta, mais pesa a parte que a casa fica pra ela: a perda média cresce junto com o número de apostas.</p>
     </div>
 
     <div class="grafico-caixa">
