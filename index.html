@@ -1008,12 +1008,12 @@ function mostrarResultado(d) {
       <table class="numeros">
         <caption class="sr-only">Os números da simulação</caption>
         <tbody>
-          <tr><th>Chance de acertar cada aposta<small>Vem da odd, descontada a margem da casa.</small></th><td>${pct(d.p)}</td></tr>
-          <tr><th>Valor esperado por aposta<small>A média do que acontece se você repetir essa aposta muitas vezes.</small></th><td>${d.VE < 0 ? "−" : ""}${brl2.format(Math.abs(d.VE))}</td></tr>
-          <tr><th>Perda esperada no período<small>Valor esperado × número de apostas.</small></th><td>${d.VE_total < 0 ? "−" : ""}${brl0.format(Math.abs(d.VE_total))}</td></tr>
-          <tr><th>Resultado médio nos cenários<small>Deve ficar perto da perda esperada (lei dos grandes números).</small></th><td>${s.media < 0 ? "−" : ""}${brl0.format(Math.abs(s.media))}</td></tr>
-          <tr><th>Desvio-padrão<small>O quanto os resultados se espalham em volta da média: quanto maior, mais imprevisível.</small></th><td>${brl0.format(s.dp)}</td></tr>
-          <tr><th>Pior momento, em média<small>O saldo mais baixo que cada cenário chegou a ter no meio do caminho.</small></th><td>${s.pior_queda_media < 0 ? "−" : ""}${brl0.format(Math.abs(s.pior_queda_media))}</td></tr>
+          <tr><th>Chance de acertar cada aposta<small>Vem da odd, descontada a parte que a casa fica pra ela.</small></th><td>${pct(d.p)}</td></tr>
+          <tr><th>Quanto você perde em média, por aposta${info("Nome técnico: <b>valor esperado</b>.")}<small>Se você repetisse essa aposta muitas e muitas vezes, esse seria o resultado médio de cada uma.</small></th><td>${d.VE < 0 ? "−" : ""}${brl2.format(Math.abs(d.VE))}</td></tr>
+          <tr><th>Quanto você perde em média, no período todo${info("Nome técnico: <b>perda esperada</b> (valor esperado × número de apostas).")}<small>A perda média por aposta × o número de apostas.</small></th><td>${d.VE_total < 0 ? "−" : ""}${brl0.format(Math.abs(d.VE_total))}</td></tr>
+          <tr><th>Resultado médio das pessoas simuladas${info("Isso é a <b>lei dos grandes números</b>: repetindo muitas vezes, a média dos resultados se aproxima da perda média esperada.")}<small>Fica perto da linha de cima: quanto mais apostas, mais a média aparece.</small></th><td>${s.media < 0 ? "−" : ""}${brl0.format(Math.abs(s.media))}</td></tr>
+          <tr><th>O quanto os resultados variam${info("Nome técnico: <b>desvio-padrão</b>. Mede o quanto os resultados se espalham em volta da média.")}<small>Quanto maior, mais imprevisível: umas pessoas perdem bem mais que a média, outras bem menos.</small></th><td>${brl0.format(s.dp)}</td></tr>
+          <tr><th>Pior momento, em média${info("Em finanças, uma medida parecida se chama <b>queda máxima</b> (<i>drawdown</i>).")}<small>O saldo mais baixo que cada pessoa simulada chegou a ter no meio do caminho.</small></th><td>${s.pior_queda_media < 0 ? "−" : ""}${brl0.format(Math.abs(s.pior_queda_media))}</td></tr>
         </tbody>
       </table>
     </div>
