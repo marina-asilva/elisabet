@@ -374,7 +374,7 @@ table.numeros td { font-family: var(--mono); font-weight: 600; white-space: nowr
         <div class="sim">
           <div class="sim-intro">
             <h2>Quanto as apostas pesam no seu bolso?</h2>
-            <p>Escolha o seu jeito de apostar. A gente simula milhares de cenários e compara com o que aconteceria se esse dinheiro fosse guardado.</p>
+            <p>Escolha o seu jeito de apostar. A gente simula milhares de pessoas apostando do mesmo jeito e compara com o que aconteceria se esse dinheiro fosse guardado ou investido.</p>
           </div>
 
           <fieldset class="campo" id="campo-valor">
@@ -427,7 +427,7 @@ table.numeros td { font-family: var(--mono); font-weight: 600; white-space: nowr
 
           <div class="progresso" id="progresso" hidden>
             <div class="barra" role="progressbar" aria-label="Progresso da simulação" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="barra"></div></div>
-            <div class="progresso-txt"><span id="progresso-msg">Sorteando cenários…</span><span id="progresso-pct">0%</span></div>
+            <div class="progresso-txt"><span id="progresso-msg">Simulando…</span><span id="progresso-pct">0%</span></div>
           </div>
 
           <div id="sim-erro"></div>
@@ -900,7 +900,7 @@ function iniciarProgresso(nApostas, traj) {
   const t0 = performance.now();
   $("#progresso").hidden = false;
   const barra = $("#barra"), cx = document.querySelector(".barra");
-  const msgs = [[0, "Preparando a simulação…"], [0.12, "Sorteando " + traj.toLocaleString("pt-BR") + " cenários…"], [0.7, "Calculando os resultados…"]];
+  const msgs = [[0, "Preparando a simulação…"], [0.12, "Simulando " + traj.toLocaleString("pt-BR") + " pessoas apostando como você…"], [0.7, "Calculando os resultados…"]];
   const passo = () => {
     const f = (performance.now() - t0) / 1000 / est;
     const p = Math.min(0.95, f < 1 ? f * 0.9 : 0.9 + (1 - Math.exp(-(f - 1))) * 0.05);
@@ -972,8 +972,8 @@ function mostrarResultado(d) {
   const medTxt = med < 0 ? "<strong>" + brl0.format(-med) + " de prejuízo</strong>" : med > 0 ? "<strong>" + brl0.format(med) + " de lucro</strong>" : "<strong>empatado</strong>";
   const faixa = v => v < 0 ? "perder " + brl0.format(-v) : v > 0 ? "ganhar " + brl0.format(v) : "empatar";
   const margemTxt = d.mercado_informado
-    ? "Pelas odds que você informou, a margem da casa nesse jogo é de <strong>" + pct(d.margem_usada, 2) + "</strong>."
-    : "Usamos uma margem de <strong>5,26%</strong>, que é o que a casa ganha num jogo equilibrado pagando odd 1,90 dos dois lados. É uma estimativa <em>conservadora</em>, ou seja, mais favorável a você do que a realidade: segundo o Banco Central, as casas ficaram com cerca de 15% de tudo o que foi apostado no Brasil.";
+    ? "Pelas odds que você informou, a parte que a casa fica pra ela nesse jogo é de <strong>" + pct(d.margem_usada, 2) + "</strong>."
+    : "Usamos <strong>5,26%</strong>, que é o que a casa fica num jogo equilibrado pagando odd 1,90 dos dois lados. É uma estimativa <em>conservadora</em>, ou seja, mais favorável a você do que a realidade: segundo o Banco Central, as casas ficaram com cerca de 15% de tudo o que foi apostado no Brasil.";
 
   const el = $("#resultado");
   el.innerHTML = `
@@ -1028,11 +1028,11 @@ function mostrarResultado(d) {
         <p>Simulações não adivinham o futuro. Elas mostram o que <em>costuma</em> acontecer quando a gente repete um mesmo padrão muitas vezes. Para isso, partimos de algumas suposições:</p>
         <ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px">
           <li><strong>A casa fica com uma parte de cada aposta.</strong> ${margemTxt}</li>
-          <li><strong>Sua chance de acertar vem da odd.</strong> Com odd ${num2(d.odd)} e essa margem, a chance de acerto fica em <strong>${pct(d.p)}</strong>. A gente não pergunta "quanto você acha que acerta", porque todo mundo tende a se achar melhor do que é.</li>
+          <li><strong>Sua chance de acertar vem da odd.</strong> Com odd ${num2(d.odd)} e essa parte da casa, a chance de acerto fica em <strong>${pct(d.p)}</strong>. A gente não pergunta "quanto você acha que acerta", porque todo mundo tende a se achar melhor do que é.</li>
           <li><strong>Cada aposta é independente.</strong> Perder ou ganhar uma não muda a chance da próxima.</li>
           <li><strong>Você aposta sempre o mesmo valor, na mesma frequência.</strong> Na vida real, quem tenta recuperar perdas aumenta o valor, e aí o prejuízo costuma ser maior.</li>
           <li><strong>O dinheiro investido rende 10% ao ano.</strong> É só uma referência de quanto esse dinheiro poderia render em outro lugar (o <em>custo de oportunidade</em>), não uma recomendação de investimento. Não descontamos impostos nem inflação.</li>
-          <li><strong>Sorteamos ${d.trajetorias.toLocaleString("pt-BR")} histórias diferentes com esse padrão (simulação de Monte Carlo).</strong> A linha do meio mostra o caso típico (a mediana), e a faixa em volta mostra até onde dá pra ir com sorte ou com azar (os percentis de 5% e 95%).</li>
+          <li><strong>Simulamos ${d.trajetorias.toLocaleString("pt-BR")} pessoas apostando com esse padrão.</strong> A linha vermelha mostra o resultado típico, e a faixa em volta mostra onde terminaram 9 em cada 10 pessoas, do azar à sorte.${info("Nomes técnicos: <b>simulação de Monte Carlo</b> (sortear muitas vezes para ver o que costuma acontecer), <b>mediana</b> (o resultado típico) e <b>percentis de 5% e 95%</b> (as bordas da faixa).")}</li>
         </ul>
       </div>
     </details>`;
