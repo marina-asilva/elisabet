@@ -994,12 +994,12 @@ function mostrarResultado(d) {
 
     <div class="grafico-caixa">
       <h3>O dinheiro ao longo do tempo</h3>
-      <p class="sub">Quanto você teria, somando tudo o que colocou, em cada caminho.</p>
+      <p class="sub">Quanto você teria, somando tudo o que colocou, em cada caminho. A faixa vermelha mostra onde terminaram 9 em cada 10 pessoas que apostaram.${info("A faixa vai do <b>percentil 5</b> ao <b>percentil 95</b> das simulações, e a linha vermelha é a <b>mediana</b> (o resultado típico).")}</p>
       <div class="legenda" aria-hidden="true">
         <span><i style="border-color:var(--accent)"></i>Investindo a 10% ao ano</span>
         <span><i style="border-color:var(--save);border-top-style:dashed"></i>Só guardando</span>
-        <span><i style="border-color:var(--loss)"></i>Apostando (caso típico)</span>
-        <span><i class="faixa"></i>Apostando (90% dos cenários)</span>
+        <span><i style="border-color:var(--loss)"></i>Apostando (resultado típico)</span>
+        <span><i class="faixa"></i>Apostando (9 em cada 10 pessoas)</span>
       </div>
       <div id="grafico"></div>
     </div>
@@ -1075,7 +1075,7 @@ function desenharGrafico(d) {
     grade += `<text x="${xi}" y="${H - 10}" text-anchor="${t === 0 ? "start" : t >= totalAnos - 1e-9 ? "end" : "middle"}" fill="#8E97A2" font-size="12" font-family="Archivo, sans-serif">${rot}</text>`;
   }
 
-  const desc = `Gráfico: investindo a 10% ao ano termina em ${brl0.format(ser.investir[n - 1])}; só guardando, ${brl0.format(ser.guardar[n - 1])}; apostando, no caso típico, ${brl0.format(ser.apostas_mediana[n - 1])}, com 90% dos cenários entre ${brl0.format(ser.apostas_p5[n - 1])} e ${brl0.format(ser.apostas_p95[n - 1])}.`;
+  const desc = `Gráfico: investindo a 10% ao ano termina em ${brl0.format(ser.investir[n - 1])}; só guardando, ${brl0.format(ser.guardar[n - 1])}; apostando, no resultado típico, ${brl0.format(ser.apostas_mediana[n - 1])}, com 9 em cada 10 pessoas entre ${brl0.format(ser.apostas_p5[n - 1])} e ${brl0.format(ser.apostas_p95[n - 1])}.`;
   caixaG.innerHTML = `
     <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(desc)}">
       ${grade}
@@ -1100,7 +1100,7 @@ function desenharGrafico(d) {
     dica.innerHTML = `<div style="color:var(--muted);margin-bottom:4px">${quando}</div>
       <div><span style="color:#C6F36B">■</span> Investindo: <b>${brl0.format(ser.investir[i])}</b></div>
       <div><span style="color:#8FA0B3">■</span> Só guardando: <b>${brl0.format(ser.guardar[i])}</b></div>
-      <div><span style="color:#FF5C5C">■</span> Apostando: <b>${brl0.format(ser.apostas_mediana[i])}</b></div>`;
+      <div><span style="color:#FF5C5C">■</span> Apostando (típico): <b>${brl0.format(ser.apostas_mediana[i])}</b></div>`;
     dica.style.display = "block";
     const cx = x(i) * r.width / W;
     const larg = dica.offsetWidth;
