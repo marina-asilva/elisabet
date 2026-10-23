@@ -281,6 +281,22 @@ table.numeros th { font-weight: 700; color: var(--text); }
 table.numeros th small { display: block; font-weight: 400; color: var(--muted); font-size: 13px; margin-top: 2px; }
 table.numeros td { font-family: var(--mono); font-weight: 600; white-space: nowrap; text-align: right; }
 
+/* ----- ícone "?": termo técnico sob demanda (divulgação progressiva) ----- */
+.info {
+  position: relative; width: 22px; height: 22px; padding: 0; margin-left: 6px; vertical-align: middle;
+  border-radius: 50%; border: 1px solid var(--line); background: var(--surface-2); color: var(--muted);
+  font: 700 13px/1 var(--font); display: inline-grid; place-items: center;
+}
+.info::after { content: ""; position: absolute; inset: -11px; } /* área de toque de 44 px */
+.info:hover, .info[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
+.info-txt {
+  display: block; margin-top: 6px; padding: 8px 10px; border-radius: var(--radius);
+  background: var(--surface-2); color: var(--text-2); font: 400 13px/1.45 var(--font);
+  text-align: left; white-space: normal; letter-spacing: normal;
+}
+.info-txt[hidden] { display: none; }
+.info-txt b { color: var(--text); font-family: var(--font); }
+
 .freio { border: 1px solid var(--accent); border-radius: 8px; padding: 14px 16px; color: var(--text-2); }
 .freio strong { color: var(--accent); }
 
@@ -467,6 +483,31 @@ const num2 = n => n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumF
 const pct = (x, d = 1) => (x * 100).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }) + "%";
 const anos = n => n === 1 ? "1 ano" : n + " anos";
 const arredOdd = o => Math.round(o * 20) / 20;
+
+// Ícone "?": mostra o termo técnico só para quem quiser (divulgação progressiva)
+let infoN = 0;
+function info(txt) {
+  const id = "info-" + (++infoN);
+  return '<button type="button" class="info" aria-expanded="false" aria-controls="' + id + '" aria-label="O que isso quer dizer?">?</button>' +
+         '<span class="info-txt" id="' + id + '" role="note" hidden>' + txt + "</span>";
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest(".info");
+  if (!b) return;
+  e.preventDefault();
+  const alvo = document.getElementById(b.getAttribute("aria-controls"));
+  const abrir = b.getAttribute("aria-expanded") !== "true";
+  b.setAttribute("aria-expanded", abrir);
+  if (alvo) alvo.hidden = !abrir;
+});
+// "9 em cada 10": porcentagem contada em pessoas (frequências naturais)
+function emCada10(p) {
+  const r = Math.round(p * 10);
+  if (p <= 0) return "nenhuma em cada 10";
+  if (r === 0) return "menos de 1 em cada 10";
+  if (r === 10 && p < 1) return "quase 10 em cada 10";
+  return r + " em cada 10";
+}
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
 // Markdown simples: **negrito**, *itálico*, listas e parágrafos
