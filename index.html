@@ -6,7 +6,7 @@
 <title>Elisabet · assistente educativa sobre apostas</title>
 <meta name="description" content="Elisabet é uma assistente educativa sobre apostas esportivas: tira dúvidas e simula o efeito das apostas no seu bolso ao longo do tempo.">
 <meta property="og:title" content="Elisabet · assistente educativa sobre apostas">
-<meta property="og:description" content="Entenda como funcionam as apostas, as odds e o impacto no seu bolso. Converse e simule cenários.">
+<meta property="og:description" content="Entenda como funcionam as apostas, as odds e o impacto no seu bolso. Converse e simule o que acontece com o seu dinheiro.">
 <meta name="theme-color" content="#0B0D10">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='8' fill='%230B0D10'/%3E%3Cg fill='%23C6F36B'%3E%3Crect x='9' y='9' width='7' height='30'/%3E%3Crect x='9' y='9' width='30' height='7'/%3E%3Crect x='9' y='20.5' width='22' height='7'/%3E%3Crect x='9' y='32' width='14' height='7'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -392,7 +392,7 @@ table.numeros td { font-family: var(--mono); font-weight: 600; white-space: nowr
           <fieldset class="campo" id="campo-horiz">
             <legend>Por quanto tempo?</legend>
             <div class="grade" data-campo="horiz"></div>
-            <div class="msg-falta">Escolha um período.</div>
+            <div class="msg-falta">Escolha por quanto tempo.</div>
           </fieldset>
 
           <div class="campo" id="campo-odd">
@@ -448,7 +448,7 @@ const MAX_HISTORICO = 6;          // quantas mensagens anteriores vão como cont
 const TIMEOUT_CHAT  = 90000;      // 90 s
 const TIMEOUT_SIM   = 60000;      // 60 s
 
-const SAUDACAO = "Olá! Eu sou a Elisabet, uma assistente educativa sobre apostas esportivas.\n\nEstou aqui para ajudar você a entender como funcionam as apostas, as probabilidades e seus possíveis impactos financeiros. Também posso explicar conceitos, responder dúvidas e simular diferentes cenários.\n\nO que você gostaria de entender?";
+const SAUDACAO = "Olá! Eu sou a Elisabet, uma assistente educativa sobre apostas esportivas.\n\nEstou aqui para ajudar você a entender como as apostas funcionam e quanto elas pesam no seu bolso. Pode me perguntar o que quiser sobre apostas. Na aba Simulador, você vê o que acontece com o seu dinheiro ao longo do tempo.\n\nO que você gostaria de entender?";
 
 // botão curto → pergunta completa que vai pra Elisabet
 const SUGESTOES = [
