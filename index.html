@@ -409,7 +409,7 @@ table.numeros td { font-family: var(--mono); font-weight: 600; white-space: nowr
           <details class="extra" id="det-mercado">
             <summary>Sabe as outras odds desse jogo? <small style="font-weight:500;color:var(--muted)">(opcional)</small><span class="mais" aria-hidden="true">+</span></summary>
             <div class="extra-corpo">
-              <p>Num jogo de futebol, por exemplo, existem 3 resultados: vitória de um time, empate ou vitória do outro. Se você informar as odds dos <strong>outros</strong> resultados, a gente calcula quanto a casa está ficando nesse jogo específico (a <strong>margem da casa</strong>, ou <em>overround</em>). Se não informar, usamos 5,26%.</p>
+              <p>Num jogo de futebol, por exemplo, existem 3 resultados: vitória de um time, empate ou vitória do outro. Se você informar as odds dos <strong>outros</strong> resultados, a gente calcula a <strong>parte que a casa fica pra ela</strong> nesse jogo. Se não informar, usamos 5,26%.<button type="button" class="info" aria-expanded="false" aria-controls="info-mercado" aria-label="O que isso quer dizer?">?</button><span class="info-txt" id="info-mercado" role="note" hidden>Nome técnico: <b>margem da casa</b> ou <b>overround</b>.</span></p>
               <div id="outras-odds"></div>
               <button type="button" class="btn-linha" id="btn-add-odd">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
@@ -799,7 +799,7 @@ function desenharOdd() {
     b.disabled = (b.dataset.passo === "-1" && estado.odd <= ODD_MIN + 1e-9) || (b.dataset.passo === "1" && estado.odd >= ODD_MAX - 1e-9);
   });
   const v = estado.valor || 10;  // acompanha o valor escolhido (R$ 10 enquanto nenhum foi escolhido)
-  $("#leitura-odd").innerHTML = brl0.format(v) + " viram <b>" + brl2.format(v * estado.odd) + "</b> se acertar. A chance que essa odd sugere é <b>" + pct(1 / estado.odd) + "</b> (probabilidade implícita).";
+  $("#leitura-odd").innerHTML = brl0.format(v) + " viram <b>" + brl2.format(v * estado.odd) + "</b> se acertar. A chance que essa odd sugere é <b>" + pct(1 / estado.odd) + "</b>." + info("Nome técnico: <b>probabilidade implícita</b> (1 ÷ odd). Ela já inclui a parte que a casa fica pra ela, então a chance real de acertar é um pouco menor.");
   desenharSoma();
 }
 // segurar o botão repete (bom no celular)
@@ -862,10 +862,10 @@ function desenharSoma() {
   const s = somaImplicita();
   if (s < 1) {
     el.className = "soma ruim";
-    el.innerHTML = "Essas odds somam <b>" + pct(s) + "</b> de probabilidade implícita. Num mercado real a soma é sempre <b>100% ou mais</b>: a parte que passa de 100% é a margem da casa. Confira as odds" + (estado.outras.length < 2 ? " ou adicione o resultado que está faltando (num jogo de futebol, são 3)." : ".");
+    el.innerHTML = "Somando a chance que cada odd sugere, dá <b>" + pct(s) + "</b>. Num jogo de verdade, essa soma é sempre <b>100% ou mais</b>: o que passa de 100% é a parte que a casa fica pra ela. Confira as odds" + (estado.outras.length < 2 ? " ou adicione o resultado que está faltando (num jogo de futebol, são 3)." : ".");
   } else {
     el.className = "soma";
-    el.innerHTML = "Soma das probabilidades implícitas: <b>" + pct(s) + "</b>. Ou seja, a casa fica com uma margem de <b>" + pct(s - 1) + "</b> nesse jogo (overround).";
+    el.innerHTML = "Somando a chance que cada odd sugere, dá <b>" + pct(s) + "</b>. Ou seja, a parte que a casa fica pra ela nesse jogo é de <b>" + pct(s - 1) + "</b>." + info("Nome técnico: <b>overround</b> ou margem da casa: a soma das probabilidades implícitas menos 100%.");
   }
   if (!simulando) $("#btn-simular").disabled = s < 1;
 }
