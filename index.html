@@ -243,6 +243,11 @@ button:disabled { cursor: not-allowed; }
 }
 .stepper button:disabled { opacity: .35; }
 .stepper output { min-width: 96px; text-align: center; font-family: var(--mono); font-weight: 600; font-size: 26px; }
+.stepper input.num {
+  width: 104px; height: 50px; text-align: center; font-family: var(--mono); font-weight: 600; font-size: 24px;
+  border: 1px solid var(--line); border-radius: var(--radius); background: transparent; color: var(--text); outline: none;
+}
+.stepper input.num:focus { border-color: var(--accent); }
 .leitura-odd { font-size: 14px; color: var(--muted); }
 .leitura-odd b { color: var(--text); font-family: var(--mono); font-weight: 600; }
 
@@ -420,10 +425,10 @@ table.numeros td { font-family: var(--mono); font-weight: 600; white-space: nowr
 
           <div class="campo" id="campo-odd">
             <div class="rotulo" id="rot-odd">Qual a odd que você costuma pegar?</div>
-            <div class="ajuda">A odd é o número que multiplica o seu dinheiro se você acertar. Se não souber, deixe em 1,90.</div>
+            <div class="ajuda">A odd é o número que multiplica o seu dinheiro se você acertar. Use as setinhas ou digite. Se não souber, deixe em 2,00.</div>
             <div class="stepper" role="group" aria-labelledby="rot-odd">
               <button type="button" data-passo="-1" data-alvo="odd" aria-label="Diminuir odd">−</button>
-              <output id="odd-valor" aria-live="polite">1,90</output>
+              <input id="odd-valor" class="num" type="text" inputmode="decimal" autocomplete="off" value="2,00" aria-label="Odd">
               <button type="button" data-passo="1" data-alvo="odd" aria-label="Aumentar odd">+</button>
             </div>
             <div class="leitura-odd" id="leitura-odd"></div>
@@ -491,7 +496,7 @@ const FREQS = [
   { id: "diario",    rot: "Todo dia",      porSemana: 7,       porAno: 364 }
 ];
 const HORIZ = [1, 2, 3, 5, 10];
-const ODD_MIN = 1.10, ODD_MAX = 15.00, ODD_PASSO = 0.05, ODD_PADRAO = 1.90;
+const ODD_MIN = 1.10, ODD_MAX = 15.00, ODD_PASSO = 0.5, ODD_PADRAO = 2.00;  // setinha de 0,5 em 0,5; digitando, vale qualquer odd com 2 casas
 const MARGEM_PADRAO = 2 / 1.90 - 1;   // 5,26%
 const TAXA_ANUAL = 0.10;
 
@@ -505,7 +510,7 @@ const num1 = n => n.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumF
 const num2 = n => n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const pct = (x, d = 1) => (x * 100).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }) + "%";
 const anos = n => n === 1 ? "1 ano" : n + " anos";
-const arredOdd = o => Math.round(o * 20) / 20;
+const arredOdd = o => Math.round(o * 100) / 100;   // 2 casas, como nas casas de aposta
 // valor em reais: sem centavos quando é redondo (R$ 20), com centavos quando não é (R$ 12,50)
 const brlV = v => Number.isInteger(v) ? brl0.format(v) : brl2.format(v);
 // número no formato do campo: "12,50" (sem ponto de milhar, para não confundir na edição)
@@ -795,7 +800,9 @@ function converterParametros(p) {
   if (p.odd) {
     const o = Math.min(ODD_MAX, Math.max(ODD_MIN, arredOdd(p.odd)));
     out.odd = o;
-    if (Math.abs(o - p.odd) > 1e-9) notas.push("Odd: arredondamos " + num2(p.odd) + " para " + num2(o) + ".");
+    if (Math.abs(o - p.odd) > 1e-9) notas.push(p.odd < ODD_MIN || p.odd > ODD_MAX
+      ? "Odd: o simulador vai de 1,10 a 15,00, então usamos " + num2(o) + "."
+      : "Odd: arredondamos " + p.odd.toLocaleString("pt-BR") + " para " + num2(o) + ".");
   }
   return { out, notas };
 }
@@ -870,10 +877,29 @@ valorIn.addEventListener("input", () => {
 valorIn.addEventListener("blur", () => { if (estado.valor) valorIn.value = fmtCampo(estado.valor); });
 valorIn.addEventListener("keydown", e => { if (e.key === "Enter") valorIn.blur(); });
 
-/* ----- odd (setinha) ----- */
-function passoOdd(o, dir) { return Math.min(ODD_MAX, Math.max(ODD_MIN, arredOdd(o + dir * ODD_PASSO))); }
-function desenharOdd() {
-  $("#odd-valor").textContent = num2(estado.odd);
+/* ----- odd (setinha ou digitando) ----- */
+// A setinha "encaixa na grade" de 0,5: de 1,85, o + vai para 2,00 e o − vai para 1,50
+function passoOdd(o, dir) {
+  const k = o / ODD_PASSO;
+  const alvo = dir > 0 ? (Math.floor(k + 1e-9) + 1) * ODD_PASSO : (Math.ceil(k - 1e-9) - 1) * ODD_PASSO;
+  return Math.min(ODD_MAX, Math.max(ODD_MIN, arredOdd(alvo)));
+}
+// Campo de odd digitável: só números; vale enquanto digita (se estiver na faixa) e é ajustado ao sair do campo
+function ligarCampoOdd(inp, ler, gravar) {
+  inp.addEventListener("input", () => {
+    const limpo = limparDecimal(inp.value, 2);
+    if (limpo !== inp.value) inp.value = limpo;
+    const o = lerDecimal(limpo);
+    if (o >= ODD_MIN && o <= ODD_MAX) gravar(arredOdd(o), false);
+  });
+  inp.addEventListener("blur", () => {
+    const o = lerDecimal(inp.value);
+    gravar(Number.isFinite(o) ? Math.min(ODD_MAX, Math.max(ODD_MIN, arredOdd(o))) : ler(), true);
+  });
+  inp.addEventListener("keydown", e => { if (e.key === "Enter") inp.blur(); });
+}
+function desenharOdd(escrever = true) {
+  if (escrever) $("#odd-valor").value = fmtCampo(estado.odd);
   document.querySelectorAll('[data-alvo="odd"]').forEach(b => {
     b.disabled = (b.dataset.passo === "-1" && estado.odd <= ODD_MIN + 1e-9) || (b.dataset.passo === "1" && estado.odd >= ODD_MAX - 1e-9);
   });
@@ -895,6 +921,7 @@ function ligarRepeticao(btn, acao) {
 }
 document.querySelectorAll('[data-alvo="odd"]').forEach(b =>
   ligarRepeticao(b, () => { estado.odd = passoOdd(estado.odd, +b.dataset.passo); desenharOdd(); }));
+ligarCampoOdd($("#odd-valor"), () => estado.odd, (o, escrever) => { estado.odd = o; desenharOdd(escrever); });
 
 /* ----- outras odds (overround) ----- */
 function desenharOutras() {
@@ -906,17 +933,21 @@ function desenharOutras() {
     linha.innerHTML =
       '<span class="nome">' + (i === 0 ? "Outro resultado" : "Mais um resultado") + '</span>' +
       '<div class="stepper" role="group" aria-label="Odd do ' + (i === 0 ? "outro" : "terceiro") + ' resultado">' +
-      '<button type="button" data-passo="-1" aria-label="Diminuir">−</button><output>' + num2(o) + '</output>' +
+      '<button type="button" data-passo="-1" aria-label="Diminuir">−</button>' +
+      '<input class="num" type="text" inputmode="decimal" autocomplete="off" aria-label="Odd do ' + (i === 0 ? "outro" : "terceiro") + ' resultado" value="' + fmtCampo(o) + '">' +
       '<button type="button" data-passo="1" aria-label="Aumentar">+</button></div>' +
       '<button type="button" class="btn-remover" aria-label="Remover esta odd"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
+    const campo = linha.querySelector("input.num");
+    const gravar = (v, escrever) => {
+      estado.outras[i] = v;
+      if (escrever) campo.value = fmtCampo(v);
+      atualizarBotoesOutra(linha, i);
+      desenharSoma();
+    };
     linha.querySelectorAll(".stepper button").forEach(b => {
-      ligarRepeticao(b, () => {
-        estado.outras[i] = passoOdd(estado.outras[i], +b.dataset.passo);
-        linha.querySelector("output").textContent = num2(estado.outras[i]);
-        atualizarBotoesOutra(linha, i);
-        desenharSoma();
-      });
+      ligarRepeticao(b, () => gravar(passoOdd(estado.outras[i], +b.dataset.passo), true));
     });
+    ligarCampoOdd(campo, () => estado.outras[i], gravar);
     linha.querySelector(".btn-remover").addEventListener("click", () => { estado.outras.splice(i, 1); desenharOutras(); });
     c.appendChild(linha);
     atualizarBotoesOutra(linha, i);
