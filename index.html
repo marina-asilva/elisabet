@@ -383,6 +383,12 @@ table.numeros td { font-family: var(--mono); font-weight: 600; white-space: nowr
 .destaques.menores .num { font-size: 19px; }
 .destaques.menores .rot { font-size: 13px; }
 
+/* ----- "?" das caixas: a explicação abre numa faixa larga embaixo da fileira ----- */
+.destaque .rot { display: block; }
+.explica { margin-top: -12px; padding: 12px 14px; border-radius: 8px; background: var(--surface-2); color: var(--text-2); font-size: 15px; line-height: 1.5; }
+.explica[hidden] { display: none; }
+.explica b { color: var(--text); }
+
 /* ----- computador: mais respiro ----- */
 @media (min-width: 720px) {
   .sim-intro h2 { font-size: 32px; }
@@ -549,7 +555,7 @@ table.numeros td { font-family: var(--mono); font-weight: 600; white-space: nowr
             <details class="extra" id="det-mercado">
               <summary>Sabe as outras odds desse jogo? <small style="font-weight:500;color:var(--muted)">(opcional)</small><span class="mais" aria-hidden="true">+</span></summary>
               <div class="extra-corpo">
-                <p>Num jogo de futebol, por exemplo, existem 3 resultados: vitória de um time, empate ou vitória do outro. Se você informar as odds dos <strong>outros</strong> resultados, a gente calcula a <strong>parte que a casa fica pra ela</strong> nesse jogo. Se não informar, usamos 5,26%.<button type="button" class="info" aria-expanded="false" aria-controls="info-mercado" aria-label="O que isso quer dizer?">?</button><span class="info-txt" id="info-mercado" role="note" hidden>Nome técnico: <b>margem da casa</b> ou <b>overround</b>.</span></p>
+                <p>Num jogo de futebol, por exemplo, existem 3 resultados: vitória de um time, empate ou vitória do outro. Se você informar as odds dos <strong>outros</strong> resultados, a gente calcula a <strong>parte que a casa fica pra ela</strong> nesse jogo. Se não informar, usamos 5,26%.<button type="button" class="info" aria-expanded="false" aria-controls="info-mercado" aria-label="O que isso quer dizer?">?</button><span class="info-txt" id="info-mercado" role="note" hidden>A casa nunca paga o preço justo. Se você somar a chance que a odd de cada resultado sugere, sempre dá mais de 100%. Esse pedaço a mais é o que fica com a casa, aconteça o que acontecer no jogo. É por isso que ela ganha no longo prazo, mesmo sem saber quem vai vencer.</span></p>
                 <div id="outras-odds"></div>
                 <button type="button" class="btn-linha" id="btn-add-odd">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
@@ -682,6 +688,16 @@ document.addEventListener("click", e => {
   e.preventDefault();
   const alvo = document.getElementById(b.getAttribute("aria-controls"));
   const abrir = b.getAttribute("aria-expanded") !== "true";
+  // dentro das caixas do resultado, a explicação abre numa faixa larga embaixo da fileira (não estica as caixas)
+  const grade = b.closest(".destaques");
+  if (grade) {
+    const painel = grade.nextElementSibling;
+    grade.querySelectorAll('.info[aria-expanded="true"]').forEach(o => o.setAttribute("aria-expanded", "false"));
+    b.setAttribute("aria-expanded", abrir);
+    painel.innerHTML = abrir ? "<b>" + b.parentElement.firstChild.textContent.trim() + ":</b> " + alvo.innerHTML : "";
+    painel.hidden = !abrir;
+    return;
+  }
   b.setAttribute("aria-expanded", abrir);
   if (alvo) alvo.hidden = !abrir;
 });
@@ -1076,7 +1092,7 @@ function atualizarFreq() {
   const lim = $("#horiz-limite");
   lim.hidden = hMax >= 10;
   $("#campo-horiz").classList.toggle("no-limite", hMax < 10);
-  lim.textContent = "Com essa frequência, o simulador vai até " + anos(hMax) + " (limite de 5.500 apostas no total).";
+  lim.innerHTML = "Com essa frequência, o simulador vai até " + anos(hMax) + "." + info("Simular milhares de pessoas fazendo milhares de apostas exige muita conta, e o servidor que a gente usa tem um tempo máximo pra responder. Por isso o total fica limitado a 5.500 apostas.");
   if (estado.horiz !== null && estado.horiz > hMax) {
     const antes = estado.horiz;
     escolher("horiz", hMax);
@@ -1122,7 +1138,7 @@ function desenharOdd(escrever = true) {
     b.disabled = (b.dataset.passo === "-1" && estado.odd <= ODD_MIN + 1e-9) || (b.dataset.passo === "1" && estado.odd >= ODD_MAX - 1e-9);
   });
   const v = estado.valor || 10;  // acompanha o valor escolhido (R$ 10 enquanto nenhum foi escolhido)
-  $("#leitura-odd").innerHTML = brlV(v) + " vira <b>" + brl2.format(v * estado.odd) + "</b> se acertar. A chance que essa odd sugere é <b>" + pct(1 / estado.odd) + "</b>." + info("Nome técnico: <b>probabilidade implícita</b> (1 ÷ odd). Ela já inclui a parte que a casa fica pra ela, então a chance real de acertar é um pouco menor.");
+  $("#leitura-odd").innerHTML = brlV(v) + " vira <b>" + brl2.format(v * estado.odd) + "</b> se acertar. A chance que essa odd sugere é <b>" + pct(1 / estado.odd) + "</b>." + info("É uma conta simples: 1 dividido pela odd. Odd 2,00 quer dizer que a casa acha que você acerta 1 vez em cada 2. Mas a casa sempre paga um pouco menos do que seria justo, então a sua chance de verdade é um pouco menor que essa.");
   desenharSoma();
 }
 // segurar o botão repete (bom no celular)
@@ -1193,7 +1209,7 @@ function desenharSoma() {
     el.innerHTML = "Somando a chance que cada odd sugere, dá <b>" + pct(s) + "</b>. Num jogo de verdade, essa soma é sempre <b>100% ou mais</b>: o que passa de 100% é a parte que a casa fica pra ela. Confira as odds" + (estado.outras.length < 2 ? " ou adicione o resultado que está faltando (num jogo de futebol, são 3)." : ".");
   } else {
     el.className = "soma";
-    el.innerHTML = "Somando a chance que cada odd sugere, dá <b>" + pct(s) + "</b>. Ou seja, a parte que a casa fica pra ela nesse jogo é de <b>" + pct(s - 1) + "</b>." + info("Nome técnico: <b>overround</b> ou margem da casa: a soma das probabilidades implícitas menos 100%.");
+    el.innerHTML = "Somando a chance que cada odd sugere, dá <b>" + pct(s) + "</b>. Ou seja, a parte que a casa fica pra ela nesse jogo é de <b>" + pct(s - 1) + "</b>." + info("Se a soma dá 105%, é como se a casa recebesse R$ 105 de todo mundo que apostou nesse jogo e devolvesse só R$ 100 pra quem acertou. Os R$ 5 que sobram ficam com ela.");
   }
   if (!simulando) $("#btn-simular").disabled = s < 1;
 }
@@ -1310,22 +1326,25 @@ function mostrarResultado(d) {
     <div class="res-titulo">RESULTADO · ${esc(brlV(d.valor))} · ${esc(freqTxt)} · ${esc(anos(d.horiz))} · odd ${esc(num2(d.odd))}</div>
 
     <div class="destaques grandes">
-      <div class="destaque"><span class="num">${brl0.format(totalApostado)}</span><span class="rot">apostados no total</span></div>
+      <div class="destaque"><span class="num">${brl0.format(totalApostado)}</span><span class="rot">apostados no total${info("É a soma de tudo o que passou pela casa de apostas: o valor de cada aposta vezes o número de apostas. Não é o quanto você perde, porque parte desse dinheiro volta quando você acerta.")}</span></div>
       <div class="destaque"><span class="num">${d.n_apostas.toLocaleString("pt-BR")}</span><span class="rot">apostas</span></div>
-      <div class="destaque"><span class="num ${med < 0 ? "perda" : ""}">${med < 0 ? "−" : med > 0 ? "+" : ""}${brl0.format(Math.abs(med))}</span><span class="rot">${med < 0 ? "perda típica" : "resultado típico"}${info("É a <b>mediana</b>: o resultado do meio. Metade das pessoas simuladas terminou melhor que isso e metade terminou pior.")}</span></div>
-      <div class="destaque"><span class="num ${s.prob_perda >= 0.5 ? "perda" : ""}">${emCada10(s.prob_perda).replace(" cada", "")}</span><span class="rot">no prejuízo${info("Exatamente <b>" + pct(s.prob_perda, 1) + "</b> das " + d.trajetorias.toLocaleString("pt-BR") + " simulações terminaram no prejuízo.")}</span></div>
+      <div class="destaque"><span class="num ${med < 0 ? "perda" : ""}">${med < 0 ? "−" : med > 0 ? "+" : ""}${brl0.format(Math.abs(med))}</span><span class="rot">${med < 0 ? "perda típica" : "resultado típico"}${info("Imagine todas as pessoas simuladas numa fila, de quem mais perdeu até quem mais ganhou. Esse é o resultado da pessoa bem no meio da fila: metade foi pior, metade foi melhor. A gente usa ela porque uns poucos sortudos que ganham muito puxariam a conta pra cima e dariam uma impressão errada.")}</span></div>
+      <div class="destaque"><span class="num ${s.prob_perda >= 0.5 ? "perda" : ""}">${emCada10(s.prob_perda).replace(" cada", "")}</span><span class="rot">no prejuízo${info("De cada 10 pessoas que simulamos apostando exatamente do seu jeito, essa é a quantidade que terminou com menos dinheiro do que colocou. Mais exatamente: " + pct(s.prob_perda, 1) + ".")}</span></div>
     </div>
+    <div class="explica" role="note" hidden></div>
 
     <div class="destaques menores">
-      <div class="destaque"><span class="num">${pct(d.p)}</span><span class="rot">chance de ganhar cada aposta${info("Vem da odd, descontada a parte que a casa fica pra ela.")}</span></div>
-      <div class="destaque"><span class="num perda">${d.VE < 0 ? "−" : ""}${brl2.format(Math.abs(d.VE))}</span><span class="rot">quanto perde em média por aposta${info("Nome técnico: <b>valor esperado</b>.")}</span></div>
-      <div class="destaque"><span class="num perda">${d.VE_total < 0 ? "−" : ""}${brl0.format(Math.abs(d.VE_total))}</span><span class="rot">quanto perde em média no período${info("Nome técnico: <b>perda esperada</b> (valor esperado × número de apostas).")}</span></div>
-      <div class="destaque"><span class="num perda">${s.pior_queda_media < 0 ? "−" : ""}${brl0.format(Math.abs(s.pior_queda_media))}</span><span class="rot">pior momento${info("O saldo mais baixo que cada pessoa simulada chegou a ter no meio do caminho, em média. Em finanças: <b>queda máxima</b> (<i>drawdown</i>).")}</span></div>
+      <div class="destaque"><span class="num">${pct(d.p)}</span><span class="rot">chance de ganhar cada aposta${info("É a chance de acertar cada aposta já tirando a parte da casa. Por isso é um pouco menor do que a chance que a odd sugere.")}</span></div>
+      <div class="destaque"><span class="num perda">${d.VE < 0 ? "−" : ""}${brl2.format(Math.abs(d.VE))}</span><span class="rot">quanto perde em média por aposta${info("Numa aposta só, você ganha ou perde bem mais que isso. Mas, se fizesse essa mesma aposta muitas e muitas vezes, cada uma te custaria, em média, esse valor.")}</span></div>
+      <div class="destaque"><span class="num perda">${d.VE_total < 0 ? "−" : ""}${brl0.format(Math.abs(d.VE_total))}</span><span class="rot">quanto perde em média no período${info("É a perda média por aposta vezes o número de apostas: o preço que a casa cobra, em média, por esse jeito de apostar. Pode ser diferente da perda típica, porque a média também conta os poucos que tiveram muita sorte.")}</span></div>
+      <div class="destaque"><span class="num perda">${s.pior_queda_media < 0 ? "−" : ""}${brl0.format(Math.abs(s.pior_queda_media))}</span><span class="rot">pior momento${info("Quem aposta vê o saldo subir e descer no caminho. Esse é, em média, o ponto mais baixo a que as pessoas simuladas chegaram: o quanto elas estiveram no vermelho em algum momento, mesmo que depois tenham recuperado uma parte.")}</span></div>
     </div>
+
+    <div class="explica" role="note" hidden></div>
 
     <div class="grafico-caixa">
       <h3>Outras possibilidades</h3>
-      <p class="sub">E se esse mesmo dinheiro fosse guardado ou investido, em vez de apostado?</p>
+      <p class="sub">E se esse mesmo dinheiro fosse guardado ou investido, em vez de apostado?${info("Cada linha mostra quanto você teria ao longo do tempo. Verde: colocando o dinheiro numa aplicação que rende 10% ao ano. Cinza: só guardando, sem render nada. Vermelha: apostando, ou seja, o que sobrou de tudo o que você colocou. A faixa vermelha mostra onde terminaram 9 em cada 10 pessoas: deixamos de fora só os mais azarados e os mais sortudos.")}</p>
       <div class="legenda" aria-hidden="true">
         <span><i style="border-color:var(--accent)"></i>Investindo a 10% ao ano</span>
         <span><i style="border-color:var(--save);border-top-style:dashed"></i>Só guardando</span>
@@ -1345,7 +1364,7 @@ function mostrarResultado(d) {
           <li><strong>Cada aposta é independente.</strong> Perder ou ganhar uma não muda a chance da próxima.</li>
           <li><strong>Você aposta sempre o mesmo valor, na mesma frequência.</strong> Na vida real, quem tenta recuperar perdas aumenta o valor, e aí o prejuízo costuma ser maior.</li>
           <li><strong>O dinheiro investido rende 10% ao ano.</strong> É só uma referência de quanto esse dinheiro poderia render em outro lugar (o <em>custo de oportunidade</em>), não uma recomendação de investimento. Não descontamos impostos nem inflação.</li>
-          <li><strong>Simulamos ${d.trajetorias.toLocaleString("pt-BR")} pessoas apostando com esse padrão.</strong> A linha vermelha mostra o resultado típico, e a faixa em volta mostra onde terminaram 9 em cada 10 pessoas, do azar à sorte.${info("Nomes técnicos: <b>simulação de Monte Carlo</b> (sortear muitas vezes para ver o que costuma acontecer), <b>mediana</b> (o resultado típico) e <b>percentis de 5% e 95%</b> (as bordas da faixa).")}</li>
+          <li><strong>Simulamos ${d.trajetorias.toLocaleString("pt-BR")} pessoas apostando com esse padrão.</strong> A linha vermelha mostra o resultado típico, e a faixa em volta mostra onde terminaram 9 em cada 10 pessoas, do azar à sorte.${info("Sortear muitas vezes e ver o que costuma acontecer é como jogar uma moeda 10.000 vezes pra descobrir quantas vezes dá cara: quanto mais repetições, mais confiável o resultado.")}</li>
         </ul>
       </div>
     </details>`;
