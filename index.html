@@ -223,6 +223,18 @@ button:disabled { cursor: not-allowed; }
 .campo.faltando .grade { outline: 1px dashed var(--loss); outline-offset: 6px; border-radius: 4px; }
 .msg-falta { font-size: 14px; color: var(--loss-soft); display: none; }
 .campo.faltando .msg-falta { display: block; }
+.entrada {
+  display: flex; align-items: center; gap: 8px; max-width: 260px; min-height: 52px; padding: 0 14px;
+  border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface);
+}
+.entrada:focus-within { border-color: var(--accent); }
+.entrada .pref { color: var(--muted); font-family: var(--mono); font-weight: 600; font-size: 18px; }
+.entrada input {
+  flex: 1; min-width: 0; border: 0; outline: none; background: transparent; color: var(--text);
+  font-family: var(--mono); font-weight: 600; font-size: 22px; padding: 10px 0;
+}
+.entrada input::placeholder { color: var(--muted); opacity: .55; }
+.campo.faltando .entrada { border-color: var(--loss); }
 
 .stepper { display: flex; align-items: center; gap: 8px; }
 .stepper button {
@@ -387,8 +399,11 @@ table.numeros td { font-family: var(--mono); font-weight: 600; white-space: nowr
 
           <fieldset class="campo" id="campo-valor">
             <legend>Quanto você aposta por vez?</legend>
-            <div class="grade" data-campo="valor"></div>
-            <div class="msg-falta">Escolha um valor.</div>
+            <div class="entrada">
+              <span class="pref" aria-hidden="true">R$</span>
+              <input id="valor-input" type="text" inputmode="decimal" autocomplete="off" placeholder="ex: 20,00" aria-label="Valor de cada aposta, em reais">
+            </div>
+            <div class="msg-falta">Digite quanto você aposta por vez.</div>
           </fieldset>
 
           <fieldset class="campo" id="campo-freq">
@@ -467,7 +482,7 @@ const SUGESTOES = [
 ];
 
 // opções do simulador (iguais às regras do n8n)
-const VALORES = [10, 20, 50, 100, 200];
+const VALOR_MAX = 1000000;   // teto só para evitar erro de digitação (o n8n confere o mesmo)
 const FREQS = [
   { id: "1x_mes",    rot: "1× por mês",    porSemana: 12 / 52, porAno: 12 },
   { id: "2x_mes",    rot: "2× por mês",    porSemana: 24 / 52, porAno: 24 },
@@ -491,6 +506,18 @@ const num2 = n => n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumF
 const pct = (x, d = 1) => (x * 100).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }) + "%";
 const anos = n => n === 1 ? "1 ano" : n + " anos";
 const arredOdd = o => Math.round(o * 20) / 20;
+// valor em reais: sem centavos quando é redondo (R$ 20), com centavos quando não é (R$ 12,50)
+const brlV = v => Number.isInteger(v) ? brl0.format(v) : brl2.format(v);
+// número no formato do campo: "12,50" (sem ponto de milhar, para não confundir na edição)
+const fmtCampo = v => v.toFixed(2).replace(".", ",");
+// Campos numéricos: só aceita algarismos e UMA vírgula (ou ponto), com no máximo 2 casas
+function limparDecimal(t, maxInteiro) {
+  t = String(t).replace(/[^\d.,]/g, "");
+  const i = t.search(/[.,]/);
+  if (i < 0) return t.slice(0, maxInteiro);
+  return t.slice(0, i).slice(0, maxInteiro) + "," + t.slice(i + 1).replace(/[.,]/g, "").slice(0, 2);
+}
+const lerDecimal = t => (t && t !== ",") ? Number(String(t).replace(",", ".")) : NaN;
 
 // Ícone "?": mostra o termo técnico só para quem quiser (divulgação progressiva)
 let infoN = 0;
@@ -750,8 +777,8 @@ function converterParametros(p) {
          : Math.abs(b - x) < Math.abs(a - x)) ? b : a);
 
   if (p.valor) {
-    out.valor = maisPerto(VALORES, p.valor, true);
-    if (out.valor !== p.valor) notas.push("Valor: você falou " + brl2.format(p.valor) + ", usamos a opção mais próxima, " + brl0.format(out.valor) + ".");
+    out.valor = Math.min(VALOR_MAX, Math.round(p.valor * 100) / 100);
+    if (out.valor !== p.valor) notas.push("Valor: o simulador vai até " + brl0.format(VALOR_MAX) + " por aposta, então usamos esse valor.");
   }
   if (p.periodo_freq) {
     const n = p.apostas || 1;
@@ -776,7 +803,7 @@ function converterParametros(p) {
 function mostrarCartaoSim(p) {
   const { out, notas } = converterParametros(p);
   const pil = [];
-  pil.push(out.valor ? '<span class="pilula">' + brl0.format(out.valor) + " / aposta</span>" : '<span class="pilula falta">valor: ?</span>');
+  pil.push(out.valor ? '<span class="pilula">' + brlV(out.valor) + " / aposta</span>" : '<span class="pilula falta">valor: ?</span>');
   pil.push(out.freq ? '<span class="pilula">' + FREQS.find(f => f.id === out.freq).rot + "</span>" : '<span class="pilula falta">frequência: ?</span>');
   pil.push(out.horiz ? '<span class="pilula">' + anos(out.horiz) + "</span>" : '<span class="pilula falta">tempo: ?</span>');
   if (out.odd) pil.push('<span class="pilula">odd ' + num2(out.odd) + "</span>");
@@ -805,7 +832,6 @@ const estado = { valor: null, freq: null, horiz: null, odd: ODD_PADRAO, outras: 
 
 function montarOpcoes() {
   const grades = {
-    valor: VALORES.map(v => [v, brl0.format(v)]),
     freq: FREQS.map(f => [f.id, f.rot]),
     horiz: HORIZ.map(h => [h, anos(h)])
   };
@@ -825,8 +851,24 @@ function escolher(campo, v) {
   document.querySelectorAll('.grade[data-campo="' + campo + '"] .opcao').forEach(b =>
     b.setAttribute("aria-pressed", String(b.dataset.valor) === String(v)));
   if (v !== null) $("#campo-" + campo).classList.remove("faltando");
-  if (campo === "valor") desenharOdd();
 }
+
+/* ----- valor por aposta (campo de digitar) ----- */
+const valorIn = $("#valor-input");
+function definirValor(v, escrever = true) {
+  estado.valor = v;
+  if (escrever) valorIn.value = v ? fmtCampo(v) : "";
+  if (v) $("#campo-valor").classList.remove("faltando");
+  desenharOdd();
+}
+valorIn.addEventListener("input", () => {
+  const limpo = limparDecimal(valorIn.value, 7);
+  if (limpo !== valorIn.value) valorIn.value = limpo;
+  const v = lerDecimal(limpo);
+  definirValor(v > 0 ? Math.min(VALOR_MAX, Math.round(v * 100) / 100) : null, false);
+});
+valorIn.addEventListener("blur", () => { if (estado.valor) valorIn.value = fmtCampo(estado.valor); });
+valorIn.addEventListener("keydown", e => { if (e.key === "Enter") valorIn.blur(); });
 
 /* ----- odd (setinha) ----- */
 function passoOdd(o, dir) { return Math.min(ODD_MAX, Math.max(ODD_MIN, arredOdd(o + dir * ODD_PASSO))); }
@@ -836,7 +878,7 @@ function desenharOdd() {
     b.disabled = (b.dataset.passo === "-1" && estado.odd <= ODD_MIN + 1e-9) || (b.dataset.passo === "1" && estado.odd >= ODD_MAX - 1e-9);
   });
   const v = estado.valor || 10;  // acompanha o valor escolhido (R$ 10 enquanto nenhum foi escolhido)
-  $("#leitura-odd").innerHTML = brl0.format(v) + " viram <b>" + brl2.format(v * estado.odd) + "</b> se acertar. A chance que essa odd sugere é <b>" + pct(1 / estado.odd) + "</b>." + info("Nome técnico: <b>probabilidade implícita</b> (1 ÷ odd). Ela já inclui a parte que a casa fica pra ela, então a chance real de acertar é um pouco menor.");
+  $("#leitura-odd").innerHTML = brlV(v) + " viram <b>" + brl2.format(v * estado.odd) + "</b> se acertar. A chance que essa odd sugere é <b>" + pct(1 / estado.odd) + "</b>." + info("Nome técnico: <b>probabilidade implícita</b> (1 ÷ odd). Ela já inclui a parte que a casa fica pra ela, então a chance real de acertar é um pouco menor.");
   desenharSoma();
 }
 // segurar o botão repete (bom no celular)
@@ -909,7 +951,7 @@ function desenharSoma() {
 
 /* ----- abrir o simulador já preenchido (vindo do chat) ----- */
 function abrirSimuladorCom(p, notas) {
-  if (p.valor) escolher("valor", p.valor);
+  if (p.valor) definirValor(p.valor);
   if (p.freq) escolher("freq", p.freq);
   if (p.horiz) escolher("horiz", p.horiz);
   if (p.odd) { estado.odd = p.odd; desenharOdd(); }
@@ -1014,7 +1056,7 @@ function mostrarResultado(d) {
 
   const el = $("#resultado");
   el.innerHTML = `
-    <div class="res-titulo">RESULTADO · ${esc(brl0.format(d.valor))} · ${esc(f.rot.toLowerCase())} · ${esc(anos(d.horiz))} · odd ${esc(num2(d.odd))}</div>
+    <div class="res-titulo">RESULTADO · ${esc(brlV(d.valor))} · ${esc(f.rot.toLowerCase())} · ${esc(anos(d.horiz))} · odd ${esc(num2(d.odd))}</div>
 
     <div class="destaques">
       <div class="destaque"><span class="num">${brl0.format(totalApostado)}</span><span class="rot">apostados no total (${d.n_apostas.toLocaleString("pt-BR")} apostas)</span></div>
@@ -1023,7 +1065,7 @@ function mostrarResultado(d) {
     </div>
 
     <div class="res-texto">
-      <p>Apostando ${esc(brl0.format(d.valor))} ${esc(f.rot.toLowerCase())} durante ${esc(anos(d.horiz))}, você colocaria <strong>${brl0.format(totalApostado)}</strong> nas apostas. No resultado típico, terminaria com ${medTxt}.</p>
+      <p>Apostando ${esc(brlV(d.valor))} ${esc(f.rot.toLowerCase())} durante ${esc(anos(d.horiz))}, você colocaria <strong>${brl0.format(totalApostado)}</strong> nas apostas. No resultado típico, terminaria com ${medTxt}.</p>
       <p>Simulamos ${d.trajetorias.toLocaleString("pt-BR")} pessoas apostando desse jeito: <strong>${emCada10(s.prob_perda)}</strong> terminaram no prejuízo. Tirando os casos de mais azar e de mais sorte, 9 em cada 10 pessoas terminaram entre ${faixa(s.p5)} e ${faixa(s.p95)}.${info("Essa faixa vai do <b>percentil 5</b> ao <b>percentil 95</b>: 5% das simulações terminaram abaixo dela e 5% acima.")}</p>
       <p>Se você investisse esse mesmo dinheiro rendendo 10% ao ano, teria <strong>${brl0.format(a.investido_final)}</strong>: ${brl0.format(a.rendimento)} a mais do que colocou.</p>
       <p>Quanto mais tempo e mais vezes você aposta, mais pesa a parte que a casa fica pra ela: a perda média cresce junto com o número de apostas.</p>
