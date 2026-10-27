@@ -389,6 +389,11 @@ table.numeros td { font-family: var(--mono); font-weight: 600; white-space: nowr
 .explica[hidden] { display: none; }
 .explica b { color: var(--text); }
 
+/* ----- "Para quem quer se aprofundar": parte teórica ----- */
+.teoria h4 { margin: 8px 0 -6px; font-size: 16px; font-weight: 800; color: var(--text); }
+.teoria .formula { font-family: var(--mono); font-size: 14px; background: var(--surface-2); padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+.teoria table.numeros { font-size: 14px; }
+
 /* ----- computador: mais respiro ----- */
 @media (min-width: 720px) {
   .sim-intro h2 { font-size: 32px; }
@@ -1366,6 +1371,64 @@ function mostrarResultado(d) {
           <li><strong>O dinheiro investido rende 10% ao ano.</strong> É só uma referência de quanto esse dinheiro poderia render em outro lugar (o <em>custo de oportunidade</em>), não uma recomendação de investimento. Não descontamos impostos nem inflação.</li>
           <li><strong>Simulamos ${d.trajetorias.toLocaleString("pt-BR")} pessoas apostando com esse padrão.</strong> A linha vermelha mostra o resultado típico, e a faixa em volta mostra onde terminaram 9 em cada 10 pessoas, do azar à sorte.${info("Sortear muitas vezes e ver o que costuma acontecer é como jogar uma moeda 10.000 vezes pra descobrir quantas vezes dá cara: quanto mais repetições, mais confiável o resultado.")}</li>
         </ul>
+      </div>
+    </details>
+
+    <details class="extra teoria">
+      <summary>Para quem quer se aprofundar: a teoria por trás<span class="mais" aria-hidden="true">+</span></summary>
+      <div class="extra-corpo">
+        <p>Esta parte explica, com os nomes técnicos, de onde vêm os números do resultado, e mostra alguns dados que ficaram de fora dele.</p>
+
+        <h4>1. Cada aposta é uma variável aleatória</h4>
+        <p>Cada aposta é um sorteio com dois resultados (uma <b>variável de Bernoulli</b>): com probabilidade <i>p</i> você ganha <i>v</i>·(<i>o</i> − 1), e com probabilidade 1 − <i>p</i> perde <i>v</i>. Aqui, <i>v</i> = ${brlV(d.valor)} é o valor apostado e <i>o</i> = ${num2(d.odd)} é a odd.</p>
+
+        <h4>2. Probabilidade implícita e margem da casa (<i>overround</i>)</h4>
+        <p>A <b>probabilidade implícita</b> de uma odd é 1/<i>o</i> = ${pct(1 / d.odd)}. Somando as probabilidades implícitas de todos os resultados de um jogo, o total passa de 100%. O excesso é a <b>margem da casa</b> (<i>overround</i>): <span class="formula">m = Σ 1/o<sub>i</sub> − 1</span>.</p>
+        <p>${d.mercado_informado ? "Pelas odds informadas, m = " + pct(d.margem_usada, 2) + "." : "Sem as outras odds, usamos m = 5,26%, a margem de um jogo equilibrado que paga 1,90 nos dois lados: 1/1,90 + 1/1,90 − 1. Segundo o Banco Central, as casas ficaram com cerca de 15% de tudo o que foi apostado no Brasil, então essa é uma hipótese <b>conservadora</b>."}</p>
+        <p>Supomos que a casa aplica a mesma margem a todos os resultados. Então a chance real de acerto é <span class="formula">p = (1/o) ÷ (1 + m) = ${pct(d.p, 2)}</span>.</p>
+
+        <h4>3. Valor esperado</h4>
+        <p>O <b>valor esperado</b> de uma aposta é a média ponderada dos resultados: <span class="formula">E[X] = p·v·(o − 1) − (1 − p)·v = v·(p·o − 1)</span>. Com os seus números, ${d.VE < 0 ? "−" : ""}${brl2.format(Math.abs(d.VE))} por aposta.</p>
+        <p>Como p·o = 1/(1 + m), isso vira <span class="formula">E[X] = −v · m/(1 + m)</span>. Ou seja, com essa hipótese, <b>a perda média por aposta depende só da margem da casa, e não da odd escolhida</b>. Odds altas ou baixas mudam o risco, mas não o preço médio.</p>
+        <p>Como as apostas são <b>independentes</b>, o valor esperado da soma é a soma dos valores esperados. Isso dá a <b>perda esperada</b> do período: n · E[X] = ${d.n_apostas.toLocaleString("pt-BR")} × ${brl2.format(Math.abs(d.VE))} = ${brl0.format(Math.abs(d.VE_total))}.</p>
+
+        <h4>4. Variância e desvio-padrão</h4>
+        <p>O <b>desvio-padrão</b> mede o quanto os resultados se espalham em volta da média. Para uma aposta: <span class="formula">σ = v · o · √(p(1 − p)) = ${brl2.format(d.valor * d.odd * Math.sqrt(d.p * (1 - d.p)))}</span>.</p>
+        <p>Com apostas independentes, as <b>variâncias</b> se somam. Por isso o desvio-padrão do total cresce com a raiz do número de apostas: <span class="formula">σ<sub>total</sub> = σ·√n</span>. Nas simulações, o desvio-padrão do resultado final foi de <b>${brl0.format(s.dp)}</b>.</p>
+        <p>Comparando os dois: a perda esperada cresce com <i>n</i>, mas a incerteza cresce só com <i>√n</i>. Quanto mais apostas, mais a perda média pesa em relação à sorte. É por isso que quem aposta muito quase sempre termina no prejuízo.</p>
+
+        <h4>5. Lei dos Grandes Números e Teorema Central do Limite</h4>
+        <p>Pela <b>Lei dos Grandes Números</b>, a média de muitos resultados se aproxima do valor esperado. Por isso o resultado médio das simulações (${s.media < 0 ? "−" : ""}${brl0.format(Math.abs(s.media))}) fica perto da perda esperada (${d.VE_total < 0 ? "−" : ""}${brl0.format(Math.abs(d.VE_total))}).</p>
+        <p>Pelo <b>Teorema Central do Limite</b>, com muitas apostas a soma dos resultados fica parecida com uma <b>distribuição normal</b> (o formato de sino). Com poucas apostas e odds altas, a distribuição fica <b>assimétrica</b>: muita gente perde tudo e poucos ganham muito.</p>
+
+        <h4>6. Mediana, média e percentis</h4>
+        <p>A "perda típica" é a <b>mediana</b> das simulações (${s.mediana < 0 ? "−" : ""}${brl0.format(Math.abs(s.mediana))}). Mostramos a mediana, e não a média, porque ela não é puxada pelos poucos casos de muita sorte. Quando a distribuição é assimétrica, as duas podem ficar bem diferentes.</p>
+        <p>A faixa do gráfico vai do <b>percentil 5</b> (${s.p5 < 0 ? "−" : ""}${brl0.format(Math.abs(s.p5))}) ao <b>percentil 95</b> (${s.p95 < 0 ? "−" : "+"}${brl0.format(Math.abs(s.p95))}): 5% das simulações terminaram abaixo dela e 5% acima.</p>
+
+        <h4>7. Simulação de Monte Carlo</h4>
+        <p>Em vez de calcular a distribuição inteira com fórmulas, sorteamos ${d.trajetorias.toLocaleString("pt-BR")} <b>trajetórias</b> (pessoas simuladas), aposta por aposta. Isso é uma <b>simulação de Monte Carlo</b>. Os números são estimativas: a proporção no prejuízo (${pct(s.prob_perda, 1)}) tem um <b>erro-padrão</b> de cerca de ${pct(Math.sqrt(s.prob_perda * (1 - s.prob_perda) / d.trajetorias), 2)}, então o valor verdadeiro está, com 95% de confiança, a até ±${pct(1.96 * Math.sqrt(s.prob_perda * (1 - s.prob_perda) / d.trajetorias), 1)} dele.</p>
+
+        <h4>8. Pior momento (<i>drawdown</i>)</h4>
+        <p>Para cada trajetória, guardamos o menor saldo acumulado ao longo do caminho. Em finanças, isso se parece com a <b>queda máxima</b> (<i>maximum drawdown</i>). A média desse valor entre as pessoas simuladas foi ${s.pior_queda_media < 0 ? "−" : ""}${brl0.format(Math.abs(s.pior_queda_media))}.</p>
+
+        <h4>9. Custo de oportunidade</h4>
+        <p>O <b>custo de oportunidade</b> é o que se deixa de ganhar ao usar o dinheiro de um jeito em vez de outro. Para o cenário investido, convertemos 10% ao ano numa <b>taxa equivalente</b> por período, r = (1,10)<sup>1/k</sup> − 1, com k = 52 semanas ou 12 meses. Aplicamos <b>juros compostos</b> sobre aportes iguais a cada período, e isso deu ${brl0.format(a.investido_final)} no final.</p>
+
+        <table class="numeros">
+          <caption class="sr-only">Resumo técnico</caption>
+          <tbody>
+            <tr><th>Margem da casa (m)</th><td>${pct(d.margem_usada || 2 / 1.9 - 1, 2)}</td></tr>
+            <tr><th>Probabilidade real de acerto (p)</th><td>${pct(d.p, 2)}</td></tr>
+            <tr><th>Valor esperado por aposta (E[X])</th><td>${d.VE < 0 ? "−" : ""}${brl2.format(Math.abs(d.VE))}</td></tr>
+            <tr><th>Perda esperada (n · E[X])</th><td>${d.VE_total < 0 ? "−" : ""}${brl0.format(Math.abs(d.VE_total))}</td></tr>
+            <tr><th>Média simulada</th><td>${s.media < 0 ? "−" : ""}${brl0.format(Math.abs(s.media))}</td></tr>
+            <tr><th>Mediana simulada</th><td>${s.mediana < 0 ? "−" : ""}${brl0.format(Math.abs(s.mediana))}</td></tr>
+            <tr><th>Desvio-padrão do resultado final</th><td>${brl0.format(s.dp)}</td></tr>
+            <tr><th>Percentil 5 / percentil 95</th><td>${s.p5 < 0 ? "−" : ""}${brl0.format(Math.abs(s.p5))} / ${s.p95 < 0 ? "−" : "+"}${brl0.format(Math.abs(s.p95))}</td></tr>
+            <tr><th>Proporção no prejuízo</th><td>${pct(s.prob_perda, 1)}</td></tr>
+            <tr><th>Trajetórias simuladas</th><td>${d.trajetorias.toLocaleString("pt-BR")}</td></tr>
+          </tbody>
+        </table>
       </div>
     </details>`;
   el.hidden = false;
