@@ -354,6 +354,22 @@ table.numeros td { font-family: var(--mono); font-weight: 600; white-space: nowr
 .info-txt b { color: var(--text); font-family: var(--font); }
 
 
+/* ----- simulador: grupos ("Sua última aposta" e "Projetando…") e limites ----- */
+.sim-intro .pesam { color: var(--loss); }
+.grupo { border: 1px solid var(--line); border-radius: 10px; padding: 18px 16px; display: flex; flex-direction: column; gap: 20px; }
+.grupo-tit { margin: 0; font-family: var(--mono); font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.grupo-sub { margin: 4px 0 0; color: var(--muted); }
+.lado-a-lado { display: grid; grid-template-columns: 1fr; gap: 22px; align-items: start; }
+@media (min-width: 640px) { .lado-a-lado { grid-template-columns: 1fr 1fr; } }
+.lado-a-lado .rotulo { margin-bottom: 0; }
+.lado-a-lado .stepper button, .lado-a-lado .stepper input.num { height: 52px; }
+.campo .ajuda.ajuda-baixo { margin-top: 0; }
+.grupo .leitura-odd { margin-top: -6px; }
+.aviso-limite { font-size: 14px; color: var(--loss-soft); }
+.aviso-limite[hidden] { display: none; }
+/* pontilhado vermelho só quando a pessoa bate no limite */
+#campo-horiz.no-limite .grade, #campo-freq.no-limite .stepper { outline: 1px dashed var(--loss); outline-offset: 6px; border-radius: 4px; }
+
 /* ----- computador: mais respiro ----- */
 @media (min-width: 720px) {
   .sim-intro h2 { font-size: 32px; }
@@ -489,66 +505,78 @@ table.numeros td { font-family: var(--mono); font-weight: 600; white-space: nowr
       <div class="sim-scroll" id="sim-scroll">
         <div class="sim">
           <div class="sim-intro">
-            <h2>Quanto as apostas pesam no seu bolso?</h2>
-            <p>Escolha o seu jeito de apostar. A gente simula milhares de pessoas apostando do mesmo jeito e compara com o que aconteceria se esse dinheiro fosse guardado ou investido.</p>
+            <h2>Quanto as apostas <span class="pesam">pesam</span> no seu bolso?</h2>
+            <p>Mostre o jeito que você aposta e a gente simula o impacto disso no seu dinheiro.</p>
           </div>
 
-          <fieldset class="campo" id="campo-valor">
-            <legend>Quanto você aposta por vez?</legend>
-            <div class="entrada">
-              <span class="pref" aria-hidden="true">R$</span>
-              <input id="valor-input" type="text" inputmode="decimal" autocomplete="off" placeholder="ex: 20,00" aria-label="Valor de cada aposta, em reais">
-            </div>
-            <div class="msg-falta">Digite quanto você aposta por vez.</div>
-          </fieldset>
+          <section class="grupo" aria-labelledby="g1-tit">
+            <h3 class="grupo-tit" id="g1-tit">Sua última aposta</h3>
+            <div class="lado-a-lado">
+              <fieldset class="campo" id="campo-valor">
+                <legend>Quanto você apostou da última vez?</legend>
+                <div class="entrada">
+                  <span class="pref" aria-hidden="true">R$</span>
+                  <input id="valor-input" type="text" inputmode="decimal" autocomplete="off" placeholder="ex: 20,00" aria-label="Valor da aposta, em reais">
+                </div>
+                <div class="msg-falta">Digite quanto você apostou.</div>
+              </fieldset>
 
-          <fieldset class="campo" id="campo-freq">
-            <legend>Com que frequência?</legend>
-            <div class="freq-linha">
-              <div class="stepper" role="group" aria-label="Número de apostas">
-                <button type="button" data-passo="-1" data-alvo="freq" aria-label="Menos apostas">−</button>
-                <input id="freq-n" class="num curto" type="text" inputmode="numeric" autocomplete="off" value="1" aria-label="Número de apostas">
-                <button type="button" data-passo="1" data-alvo="freq" aria-label="Mais apostas">+</button>
+              <div class="campo" id="campo-odd">
+                <div class="rotulo" id="rot-odd">Qual odd você pegou?</div>
+                <div class="stepper" role="group" aria-labelledby="rot-odd">
+                  <button type="button" data-passo="-1" data-alvo="odd" aria-label="Diminuir odd">−</button>
+                  <input id="odd-valor" class="num" type="text" inputmode="decimal" autocomplete="off" value="2,00" aria-label="Odd">
+                  <button type="button" data-passo="1" data-alvo="odd" aria-label="Aumentar odd">+</button>
+                </div>
+                <div class="ajuda ajuda-baixo">A odd é o número que multiplica o seu dinheiro se você acertar. Use as setinhas ou digite.</div>
               </div>
-              <span class="freq-por" id="freq-por">vez por…</span>
-            </div>
-            <div class="grade grade-3" data-campo="unid"></div>
-            <div class="ajuda" id="freq-leitura">Máximo: 5 apostas por dia (35 por semana ou 150 por mês).</div>
-            <div class="aviso-campo" id="freq-aviso" hidden></div>
-            <div class="msg-falta">Escolha se é por dia, por semana ou por mês.</div>
-          </fieldset>
-
-          <fieldset class="campo" id="campo-horiz">
-            <legend>Por quanto tempo?</legend>
-            <div class="grade" data-campo="horiz"></div>
-            <div class="ajuda" id="horiz-limite" hidden></div>
-            <div class="aviso-campo" id="horiz-aviso" hidden></div>
-            <div class="msg-falta">Escolha por quanto tempo.</div>
-          </fieldset>
-
-          <div class="campo" id="campo-odd">
-            <div class="rotulo" id="rot-odd">Qual a odd que você costuma pegar?</div>
-            <div class="ajuda">A odd é o número que multiplica o seu dinheiro se você acertar. Use as setinhas ou digite. Se não souber, deixe em 2,00.</div>
-            <div class="stepper" role="group" aria-labelledby="rot-odd">
-              <button type="button" data-passo="-1" data-alvo="odd" aria-label="Diminuir odd">−</button>
-              <input id="odd-valor" class="num" type="text" inputmode="decimal" autocomplete="off" value="2,00" aria-label="Odd">
-              <button type="button" data-passo="1" data-alvo="odd" aria-label="Aumentar odd">+</button>
             </div>
             <div class="leitura-odd" id="leitura-odd"></div>
-          </div>
 
-          <details class="extra" id="det-mercado">
-            <summary>Sabe as outras odds desse jogo? <small style="font-weight:500;color:var(--muted)">(opcional)</small><span class="mais" aria-hidden="true">+</span></summary>
-            <div class="extra-corpo">
-              <p>Num jogo de futebol, por exemplo, existem 3 resultados: vitória de um time, empate ou vitória do outro. Se você informar as odds dos <strong>outros</strong> resultados, a gente calcula a <strong>parte que a casa fica pra ela</strong> nesse jogo. Se não informar, usamos 5,26%.<button type="button" class="info" aria-expanded="false" aria-controls="info-mercado" aria-label="O que isso quer dizer?">?</button><span class="info-txt" id="info-mercado" role="note" hidden>Nome técnico: <b>margem da casa</b> ou <b>overround</b>.</span></p>
-              <div id="outras-odds"></div>
-              <button type="button" class="btn-linha" id="btn-add-odd">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-                Adicionar outra odd
-              </button>
-              <div class="soma" id="soma" hidden></div>
+            <details class="extra" id="det-mercado">
+              <summary>Sabe as outras odds desse jogo? <small style="font-weight:500;color:var(--muted)">(opcional)</small><span class="mais" aria-hidden="true">+</span></summary>
+              <div class="extra-corpo">
+                <p>Num jogo de futebol, por exemplo, existem 3 resultados: vitória de um time, empate ou vitória do outro. Se você informar as odds dos <strong>outros</strong> resultados, a gente calcula a <strong>parte que a casa fica pra ela</strong> nesse jogo. Se não informar, usamos 5,26%.<button type="button" class="info" aria-expanded="false" aria-controls="info-mercado" aria-label="O que isso quer dizer?">?</button><span class="info-txt" id="info-mercado" role="note" hidden>Nome técnico: <b>margem da casa</b> ou <b>overround</b>.</span></p>
+                <div id="outras-odds"></div>
+                <button type="button" class="btn-linha" id="btn-add-odd">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                  Adicionar outra odd
+                </button>
+                <div class="soma" id="soma" hidden></div>
+              </div>
+            </details>
+          </section>
+
+          <section class="grupo" aria-labelledby="g2-tit">
+            <div>
+              <h3 class="grupo-tit" id="g2-tit">Projetando…</h3>
+              <p class="grupo-sub">Vamos imaginar que você continue apostando desse jeito.</p>
             </div>
-          </details>
+
+            <fieldset class="campo" id="campo-freq">
+              <legend>Quantas vezes você aposta?</legend>
+              <div class="freq-linha">
+                <div class="stepper" role="group" aria-label="Número de apostas">
+                  <button type="button" data-passo="-1" data-alvo="freq" aria-label="Menos apostas">−</button>
+                  <input id="freq-n" class="num curto" type="text" inputmode="numeric" autocomplete="off" value="1" aria-label="Número de apostas">
+                  <button type="button" data-passo="1" data-alvo="freq" aria-label="Mais apostas">+</button>
+                </div>
+                <span class="freq-por" id="freq-por">vez por…</span>
+              </div>
+              <div class="grade grade-3" data-campo="unid"></div>
+              <div class="ajuda" id="freq-leitura"></div>
+              <div class="aviso-limite" id="freq-aviso" hidden></div>
+              <div class="msg-falta">Escolha se é por dia, por semana ou por mês.</div>
+            </fieldset>
+
+            <fieldset class="campo" id="campo-horiz">
+              <legend>Por quantos anos?</legend>
+              <div class="grade" data-campo="horiz"></div>
+              <div class="aviso-limite" id="horiz-limite" hidden></div>
+              <div class="aviso-limite" id="horiz-aviso" hidden></div>
+              <div class="msg-falta">Escolha por quantos anos.</div>
+            </fieldset>
+          </section>
 
           <div class="ajustes" id="ajustes" hidden></div>
 
@@ -1001,7 +1029,7 @@ const freqIn = $("#freq-n");
 const apostasAno = (n, u) => n * APOSTAS_ANO[u];
 // maior período (1, 2, 3, 5 ou 10 anos) que cabe no limite de apostas
 const maiorHoriz = (n, u) => HORIZ.filter(h => apostasAno(n, u) * h <= LIMITE_APOSTAS).pop();
-function avisoFreq(txt) { const a = $("#freq-aviso"); a.textContent = txt || ""; a.hidden = !txt; }
+function avisoFreq(txt) { const a = $("#freq-aviso"); a.textContent = txt || ""; a.hidden = !txt; $("#campo-freq").classList.toggle("no-limite", !!txt); }
 function definirFreqN(n, escrever = true) {
   n = Math.max(1, Math.round(n));
   const u = estado.freqUnid;
@@ -1028,13 +1056,14 @@ function atualizarFreq() {
   document.querySelectorAll('[data-alvo="freq"]').forEach(b => {
     b.disabled = (b.dataset.passo === "-1" && n <= 1) || (b.dataset.passo === "1" && !!u && n >= FREQ_MAX[u]);
   });
-  $("#freq-leitura").textContent = (u ? "Isso dá " + apostasAno(n, u).toLocaleString("pt-BR") + " apostas por ano. " : "") + "Máximo: 5 apostas por dia (35 por semana ou 150 por mês).";
+  $("#freq-leitura").textContent = u ? "Isso dá " + apostasAno(n, u).toLocaleString("pt-BR") + " apostas por ano." : "";
   // períodos que passam do limite ficam desabilitados
   const hMax = u ? maiorHoriz(n, u) : 10;
   document.querySelectorAll('.grade[data-campo="horiz"] .opcao').forEach(b => { b.disabled = +b.dataset.valor > hMax; });
   const lim = $("#horiz-limite");
   lim.hidden = hMax >= 10;
-  lim.textContent = "Com essa frequência, dá pra simular até " + anos(hMax) + ".";
+  $("#campo-horiz").classList.toggle("no-limite", hMax < 10);
+  lim.textContent = "Com essa frequência, o simulador vai até " + anos(hMax) + " (limite de 5.500 apostas no total).";
   if (estado.horiz !== null && estado.horiz > hMax) {
     const antes = estado.horiz;
     escolher("horiz", hMax);
@@ -1080,7 +1109,7 @@ function desenharOdd(escrever = true) {
     b.disabled = (b.dataset.passo === "-1" && estado.odd <= ODD_MIN + 1e-9) || (b.dataset.passo === "1" && estado.odd >= ODD_MAX - 1e-9);
   });
   const v = estado.valor || 10;  // acompanha o valor escolhido (R$ 10 enquanto nenhum foi escolhido)
-  $("#leitura-odd").innerHTML = brlV(v) + " viram <b>" + brl2.format(v * estado.odd) + "</b> se acertar. A chance que essa odd sugere é <b>" + pct(1 / estado.odd) + "</b>." + info("Nome técnico: <b>probabilidade implícita</b> (1 ÷ odd). Ela já inclui a parte que a casa fica pra ela, então a chance real de acertar é um pouco menor.");
+  $("#leitura-odd").innerHTML = brlV(v) + " vira <b>" + brl2.format(v * estado.odd) + "</b> se acertar. A chance que essa odd sugere é <b>" + pct(1 / estado.odd) + "</b>." + info("Nome técnico: <b>probabilidade implícita</b> (1 ÷ odd). Ela já inclui a parte que a casa fica pra ela, então a chance real de acertar é um pouco menor.");
   desenharSoma();
 }
 // segurar o botão repete (bom no celular)
