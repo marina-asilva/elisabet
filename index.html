@@ -220,6 +220,12 @@ button:disabled { cursor: not-allowed; }
 }
 .opcao:hover { border-color: var(--muted); }
 .opcao[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 900; }
+.grade-3 { grid-template-columns: repeat(3, 1fr); max-width: 420px; }
+.opcao:disabled { opacity: .35; cursor: not-allowed; }
+.freq-linha { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.freq-por { font-weight: 700; color: var(--text-2); }
+.stepper input.num.curto { width: 80px; }
+.aviso-campo { font-size: 14px; color: var(--text-2); background: var(--surface-2); border-radius: var(--radius); padding: 8px 12px; }
 .campo.faltando .grade { outline: 1px dashed var(--loss); outline-offset: 6px; border-radius: 4px; }
 .msg-falta { font-size: 14px; color: var(--loss-soft); display: none; }
 .campo.faltando .msg-falta { display: block; }
@@ -413,13 +419,25 @@ table.numeros td { font-family: var(--mono); font-weight: 600; white-space: nowr
 
           <fieldset class="campo" id="campo-freq">
             <legend>Com que frequência?</legend>
-            <div class="grade" data-campo="freq"></div>
-            <div class="msg-falta">Escolha uma frequência.</div>
+            <div class="freq-linha">
+              <div class="stepper" role="group" aria-label="Número de apostas">
+                <button type="button" data-passo="-1" data-alvo="freq" aria-label="Menos apostas">−</button>
+                <input id="freq-n" class="num curto" type="text" inputmode="numeric" autocomplete="off" value="1" aria-label="Número de apostas">
+                <button type="button" data-passo="1" data-alvo="freq" aria-label="Mais apostas">+</button>
+              </div>
+              <span class="freq-por" id="freq-por">vez por…</span>
+            </div>
+            <div class="grade grade-3" data-campo="unid"></div>
+            <div class="ajuda" id="freq-leitura">Máximo: 5 apostas por dia (35 por semana ou 150 por mês).</div>
+            <div class="aviso-campo" id="freq-aviso" hidden></div>
+            <div class="msg-falta">Escolha se é por dia, por semana ou por mês.</div>
           </fieldset>
 
           <fieldset class="campo" id="campo-horiz">
             <legend>Por quanto tempo?</legend>
             <div class="grade" data-campo="horiz"></div>
+            <div class="ajuda" id="horiz-limite" hidden></div>
+            <div class="aviso-campo" id="horiz-aviso" hidden></div>
             <div class="msg-falta">Escolha por quanto tempo.</div>
           </fieldset>
 
@@ -488,13 +506,13 @@ const SUGESTOES = [
 
 // opções do simulador (iguais às regras do n8n)
 const VALOR_MAX = 1000000;   // teto só para evitar erro de digitação (o n8n confere o mesmo)
-const FREQS = [
-  { id: "1x_mes",    rot: "1× por mês",    porSemana: 12 / 52, porAno: 12 },
-  { id: "2x_mes",    rot: "2× por mês",    porSemana: 24 / 52, porAno: 24 },
-  { id: "1x_semana", rot: "1× por semana", porSemana: 1,       porAno: 52 },
-  { id: "3x_semana", rot: "3× por semana", porSemana: 3,       porAno: 156 },
-  { id: "diario",    rot: "Todo dia",      porSemana: 7,       porAno: 364 }
-];
+// Frequência: número de apostas + unidade (dia, semana ou mês). As regras são as mesmas do n8n.
+const UNIDADES = [["dia", "por dia"], ["semana", "por semana"], ["mes", "por mês"]];
+const FREQ_MAX = { dia: 5, semana: 35, mes: 150 };            // = 5 apostas por dia
+const APOSTAS_ANO = { dia: 364, semana: 52, mes: 12 };        // "por dia" vira 7 por semana × 52 semanas
+const LIMITE_APOSTAS = 5500;                                   // frequência × período (tempo de execução no n8n)
+const nomeUnid = { dia: "dia", semana: "semana", mes: "mês" };
+const rotFreq = (n, u) => n + (n === 1 ? " vez" : " vezes") + " por " + nomeUnid[u];
 const HORIZ = [1, 2, 3, 5, 10];
 const ODD_MIN = 1.10, ODD_MAX = 15.00, ODD_PASSO = 0.5, ODD_PADRAO = 2.00;  // setinha de 0,5 em 0,5; digitando, vale qualquer odd com 2 casas
 const MARGEM_PADRAO = 2 / 1.90 - 1;   // 5,26%
@@ -776,7 +794,7 @@ $("#btn-nova").addEventListener("click", () => {
 /* ----- Cartão "Quer ver isso em números?" ----- */
 // Converte o que a Elisabet extraiu da conversa para as opções dos botões
 function converterParametros(p) {
-  const out = { valor: null, freq: null, horiz: null, odd: null }, notas = [];
+  const out = { valor: null, freqN: null, freqUnid: null, horiz: null, odd: null }, notas = [];
   const maisPerto = (lista, x, log = false) => lista.reduce((a, b) =>
     (log ? Math.abs(Math.log(b) - Math.log(x)) < Math.abs(Math.log(a) - Math.log(x))
          : Math.abs(b - x) < Math.abs(a - x)) ? b : a);
@@ -786,16 +804,22 @@ function converterParametros(p) {
     if (out.valor !== p.valor) notas.push("Valor: o simulador vai até " + brl0.format(VALOR_MAX) + " por aposta, então usamos esse valor.");
   }
   if (p.periodo_freq) {
-    const n = p.apostas || 1;
-    const porSemana = p.periodo_freq === "dia" ? n * 7 : p.periodo_freq === "semana" ? n : n * 12 / 52;
-    const f = FREQS.reduce((a, b) => Math.abs(Math.log(b.porSemana) - Math.log(porSemana)) < Math.abs(Math.log(a.porSemana) - Math.log(porSemana)) ? b : a);
-    out.freq = f.id;
-    const exato = (p.periodo_freq === "mes" && (n === 1 || n === 2)) || (p.periodo_freq === "semana" && (n === 1 || n === 3)) || (p.periodo_freq === "dia" && n === 1);
-    if (!exato) notas.push("Frequência: usamos a opção mais próxima do que você contou, " + f.rot.toLowerCase() + ".");
+    const u = p.periodo_freq;
+    let n = Math.max(1, Math.round(p.apostas || 1));
+    if (n !== (p.apostas || 1)) notas.push("Frequência: o simulador conta apostas inteiras, então usamos " + rotFreq(n, u) + ".");
+    if (n > FREQ_MAX[u]) {
+      n = FREQ_MAX[u];
+      notas.push("Frequência: o simulador vai até 5 apostas por dia (35 por semana ou 150 por mês), então usamos " + rotFreq(n, u) + ".");
+    }
+    out.freqN = n; out.freqUnid = u;
   }
   if (p.horiz_anos) {
     out.horiz = maisPerto(HORIZ, p.horiz_anos);
-    if (out.horiz !== p.horiz_anos) notas.push("Período: o simulador trabalha com anos inteiros, então usamos " + anos(out.horiz) + ".");
+    if (out.horiz !== p.horiz_anos) notas.push("Período: o simulador trabalha com 1, 2, 3, 5 ou 10 anos, então usamos " + anos(out.horiz) + ".");
+    if (out.freqUnid) {
+      const hMax = maiorHoriz(out.freqN, out.freqUnid);
+      if (out.horiz > hMax) { out.horiz = hMax; notas.push("Período: com essa frequência, o simulador vai até " + anos(hMax) + ", então usamos " + anos(hMax) + "."); }
+    }
   }
   if (p.odd) {
     const o = Math.min(ODD_MAX, Math.max(ODD_MIN, arredOdd(p.odd)));
@@ -811,7 +835,7 @@ function mostrarCartaoSim(p) {
   const { out, notas } = converterParametros(p);
   const pil = [];
   pil.push(out.valor ? '<span class="pilula">' + brlV(out.valor) + " / aposta</span>" : '<span class="pilula falta">valor: ?</span>');
-  pil.push(out.freq ? '<span class="pilula">' + FREQS.find(f => f.id === out.freq).rot + "</span>" : '<span class="pilula falta">frequência: ?</span>');
+  pil.push(out.freqUnid ? '<span class="pilula">' + rotFreq(out.freqN, out.freqUnid) + "</span>" : '<span class="pilula falta">frequência: ?</span>');
   pil.push(out.horiz ? '<span class="pilula">' + anos(out.horiz) + "</span>" : '<span class="pilula falta">tempo: ?</span>');
   if (out.odd) pil.push('<span class="pilula">odd ' + num2(out.odd) + "</span>");
 
@@ -835,11 +859,11 @@ function mostrarCartaoSim(p) {
 /* ============================================================
    SIMULADOR
    ============================================================ */
-const estado = { valor: null, freq: null, horiz: null, odd: ODD_PADRAO, outras: [] };
+const estado = { valor: null, freqN: 1, freqUnid: null, horiz: null, odd: ODD_PADRAO, outras: [] };
 
 function montarOpcoes() {
   const grades = {
-    freq: FREQS.map(f => [f.id, f.rot]),
+    unid: UNIDADES,
     horiz: HORIZ.map(h => [h, anos(h)])
   };
   for (const [campo, ops] of Object.entries(grades)) {
@@ -848,13 +872,14 @@ function montarOpcoes() {
       const b = document.createElement("button");
       b.type = "button"; b.className = "opcao"; b.textContent = rot;
       b.dataset.valor = v; b.setAttribute("aria-pressed", "false");
-      b.addEventListener("click", () => { escolher(campo, typeof v === "number" ? v : String(v)); });
+      b.addEventListener("click", () => { campo === "unid" ? definirUnid(v) : escolher(campo, v); });
       g.appendChild(b);
     });
   }
 }
 function escolher(campo, v) {
   estado[campo] = v;
+  if (campo === "horiz") $("#horiz-aviso").hidden = true;
   document.querySelectorAll('.grade[data-campo="' + campo + '"] .opcao').forEach(b =>
     b.setAttribute("aria-pressed", String(b.dataset.valor) === String(v)));
   if (v !== null) $("#campo-" + campo).classList.remove("faltando");
@@ -876,6 +901,63 @@ valorIn.addEventListener("input", () => {
 });
 valorIn.addEventListener("blur", () => { if (estado.valor) valorIn.value = fmtCampo(estado.valor); });
 valorIn.addEventListener("keydown", e => { if (e.key === "Enter") valorIn.blur(); });
+
+/* ----- frequência (número + dia/semana/mês) e o limite do período ----- */
+const freqIn = $("#freq-n");
+const apostasAno = (n, u) => n * APOSTAS_ANO[u];
+// maior período (1, 2, 3, 5 ou 10 anos) que cabe no limite de apostas
+const maiorHoriz = (n, u) => HORIZ.filter(h => apostasAno(n, u) * h <= LIMITE_APOSTAS).pop();
+function avisoFreq(txt) { const a = $("#freq-aviso"); a.textContent = txt || ""; a.hidden = !txt; }
+function definirFreqN(n, escrever = true) {
+  n = Math.max(1, Math.round(n));
+  const u = estado.freqUnid;
+  if (u && n > FREQ_MAX[u]) { n = FREQ_MAX[u]; avisoFreq("O máximo é " + rotFreq(n, u) + (u === "dia" ? "." : " (o mesmo que 5 apostas por dia).")); escrever = true; }
+  else avisoFreq("");
+  estado.freqN = n;
+  if (escrever) freqIn.value = n;
+  atualizarFreq();
+}
+function definirUnid(u) {
+  estado.freqUnid = u;
+  document.querySelectorAll('.grade[data-campo="unid"] .opcao').forEach(b => b.setAttribute("aria-pressed", b.dataset.valor === u));
+  $("#campo-freq").classList.remove("faltando");
+  if (estado.freqN > FREQ_MAX[u]) {
+    const antes = estado.freqN;
+    estado.freqN = FREQ_MAX[u]; freqIn.value = estado.freqN;
+    avisoFreq("Mudamos de " + antes + " para " + rotFreq(estado.freqN, u) + ", que é o máximo" + (u === "dia" ? "." : " (o mesmo que 5 apostas por dia)."));
+  } else avisoFreq("");
+  atualizarFreq();
+}
+function atualizarFreq() {
+  const n = estado.freqN, u = estado.freqUnid;
+  $("#freq-por").textContent = (n === 1 ? "vez" : "vezes") + " por" + (u ? " " + nomeUnid[u] : "…");
+  document.querySelectorAll('[data-alvo="freq"]').forEach(b => {
+    b.disabled = (b.dataset.passo === "-1" && n <= 1) || (b.dataset.passo === "1" && !!u && n >= FREQ_MAX[u]);
+  });
+  $("#freq-leitura").textContent = (u ? "Isso dá " + apostasAno(n, u).toLocaleString("pt-BR") + " apostas por ano. " : "") + "Máximo: 5 apostas por dia (35 por semana ou 150 por mês).";
+  // períodos que passam do limite ficam desabilitados
+  const hMax = u ? maiorHoriz(n, u) : 10;
+  document.querySelectorAll('.grade[data-campo="horiz"] .opcao').forEach(b => { b.disabled = +b.dataset.valor > hMax; });
+  const lim = $("#horiz-limite");
+  lim.hidden = hMax >= 10;
+  lim.textContent = "Com essa frequência, dá pra simular até " + anos(hMax) + ".";
+  if (estado.horiz !== null && estado.horiz > hMax) {
+    const antes = estado.horiz;
+    escolher("horiz", hMax);
+    const a = $("#horiz-aviso");
+    a.textContent = "Mudamos o período de " + anos(antes) + " para " + anos(hMax) + ", o máximo com essa frequência.";
+    a.hidden = false;
+  }
+}
+freqIn.addEventListener("input", () => {
+  const limpo = freqIn.value.replace(/\D/g, "").slice(0, 3);
+  if (limpo !== freqIn.value) freqIn.value = limpo;
+  if (+limpo >= 1) definirFreqN(+limpo, false);
+});
+freqIn.addEventListener("blur", () => { freqIn.value = estado.freqN; });
+freqIn.addEventListener("keydown", e => { if (e.key === "Enter") freqIn.blur(); });
+document.querySelectorAll('[data-alvo="freq"]').forEach(b =>
+  ligarRepeticao(b, () => definirFreqN(estado.freqN + +b.dataset.passo)));
 
 /* ----- odd (setinha ou digitando) ----- */
 // A setinha "encaixa na grade" de 0,5: de 1,85, o + vai para 2,00 e o − vai para 1,50
@@ -983,8 +1065,9 @@ function desenharSoma() {
 /* ----- abrir o simulador já preenchido (vindo do chat) ----- */
 function abrirSimuladorCom(p, notas) {
   if (p.valor) definirValor(p.valor);
-  if (p.freq) escolher("freq", p.freq);
+  if (p.freqUnid) { estado.freqN = p.freqN; freqIn.value = p.freqN; definirUnid(p.freqUnid); }
   if (p.horiz) escolher("horiz", p.horiz);
+  $("#freq-aviso").hidden = true; $("#horiz-aviso").hidden = true;
   if (p.odd) { estado.odd = p.odd; desenharOdd(); }
   const aj = $("#ajustes");
   if (notas.length) {
@@ -992,7 +1075,7 @@ function abrirSimuladorCom(p, notas) {
     aj.innerHTML = "<strong>Ajustamos alguns dados da conversa para as opções do simulador:</strong><ul>" + notas.map(n => "<li>" + esc(n) + "</li>").join("") + "</ul>";
   } else { aj.hidden = true; }
   abrirAba("sim");
-  const falta = ["valor", "freq", "horiz"].filter(k => estado[k] === null);
+  const falta = camposFaltando();
   if (falta.length) {
     falta.forEach(k => $("#campo-" + k).classList.add("faltando"));
     $("#campo-" + falta[0]).scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1003,7 +1086,8 @@ function abrirSimuladorCom(p, notas) {
 }
 
 /* ----- chamar o n8n ----- */
-let simulando = false, timerProg = null;
+const camposFaltando = () => [["valor", estado.valor], ["freq", estado.freqUnid], ["horiz", estado.horiz]].filter(([, v]) => v === null).map(([k]) => k);
+let simulando = false, timerProg = null, pedido = null;
 function iniciarProgresso(nApostas, traj) {
   // estimativa de tempo: medida nos testes (~11 s no pior caso)
   const est = Math.max(2.5, 1.5 + nApostas * traj / 1.9e6);
@@ -1032,13 +1116,12 @@ function terminarProgresso(ok) {
 
 async function simular() {
   if (simulando) return;
-  const falta = ["valor", "freq", "horiz"].filter(k => estado[k] === null);
+  const falta = camposFaltando();
   falta.forEach(k => $("#campo-" + k).classList.add("faltando"));
   if (falta.length) { $("#campo-" + falta[0]).scrollIntoView({ behavior: "smooth", block: "center" }); return; }
   if (mercadoInvalido()) { $("#det-mercado").open = true; $("#soma").scrollIntoView({ behavior: "smooth", block: "center" }); return; }
 
-  const f = FREQS.find(x => x.id === estado.freq);
-  const nApostas = f.porAno * estado.horiz;
+  const nApostas = apostasAno(estado.freqN, estado.freqUnid) * estado.horiz;
   const traj = nApostas > 2000 ? 5000 : 10000;
   simulando = true;
   $("#btn-simular").disabled = true;
@@ -1050,7 +1133,8 @@ async function simular() {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_SIM);
   try {
-    const corpo = { valor: estado.valor, freq: estado.freq, horiz: estado.horiz, odd: arredOdd(estado.odd), odds_outros: estado.outras.map(arredOdd) };
+    const corpo = { valor: estado.valor, freq_n: estado.freqN, freq_unid: estado.freqUnid, horiz: estado.horiz, odd: arredOdd(estado.odd), odds_outros: estado.outras.map(arredOdd) };
+    pedido = corpo;
     const r = await fetch(URL_SIMULADOR, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo), signal: ctrl.signal });
     let dados = null;
     try { dados = await r.json(); } catch (_) {}
@@ -1076,7 +1160,7 @@ let ultimo = null;
 function mostrarResultado(d) {
   ultimo = d;
   const s = d.simulado, a = d.alternativo;
-  const f = FREQS.find(x => x.id === d.freq_opcao) || FREQS.find(x => x.id === estado.freq);
+  const freqTxt = rotFreq(pedido.freq_n, pedido.freq_unid);
   const totalApostado = d.valor * d.n_apostas;
   const med = s.mediana;
   const medTxt = med < 0 ? "<strong>" + brl0.format(-med) + " de prejuízo</strong>" : med > 0 ? "<strong>" + brl0.format(med) + " de lucro</strong>" : "<strong>empatado</strong>";
@@ -1087,7 +1171,7 @@ function mostrarResultado(d) {
 
   const el = $("#resultado");
   el.innerHTML = `
-    <div class="res-titulo">RESULTADO · ${esc(brlV(d.valor))} · ${esc(f.rot.toLowerCase())} · ${esc(anos(d.horiz))} · odd ${esc(num2(d.odd))}</div>
+    <div class="res-titulo">RESULTADO · ${esc(brlV(d.valor))} · ${esc(freqTxt)} · ${esc(anos(d.horiz))} · odd ${esc(num2(d.odd))}</div>
 
     <div class="destaques">
       <div class="destaque"><span class="num">${brl0.format(totalApostado)}</span><span class="rot">apostados no total (${d.n_apostas.toLocaleString("pt-BR")} apostas)</span></div>
@@ -1096,7 +1180,7 @@ function mostrarResultado(d) {
     </div>
 
     <div class="res-texto">
-      <p>Apostando ${esc(brlV(d.valor))} ${esc(f.rot.toLowerCase())} durante ${esc(anos(d.horiz))}, você colocaria <strong>${brl0.format(totalApostado)}</strong> nas apostas. No resultado típico, terminaria com ${medTxt}.</p>
+      <p>Apostando ${esc(brlV(d.valor))} ${esc(freqTxt)} durante ${esc(anos(d.horiz))}, você colocaria <strong>${brl0.format(totalApostado)}</strong> nas apostas. No resultado típico, terminaria com ${medTxt}.</p>
       <p>Simulamos ${d.trajetorias.toLocaleString("pt-BR")} pessoas apostando desse jeito: <strong>${emCada10(s.prob_perda)}</strong> terminaram no prejuízo. Tirando os casos de mais azar e de mais sorte, 9 em cada 10 pessoas terminaram entre ${faixa(s.p5)} e ${faixa(s.p95)}.${info("Essa faixa vai do <b>percentil 5</b> ao <b>percentil 95</b>: 5% das simulações terminaram abaixo dela e 5% acima.")}</p>
       <p>Se você investisse esse mesmo dinheiro rendendo 10% ao ano, teria <strong>${brl0.format(a.investido_final)}</strong>: ${brl0.format(a.rendimento)} a mais do que colocou.</p>
       <p>Quanto mais tempo e mais vezes você aposta, mais pesa a parte que a casa fica pra ela: a perda média cresce junto com o número de apostas.</p>
@@ -1237,6 +1321,7 @@ window.addEventListener("resize", () => { clearTimeout(tRedim); tRedim = setTime
    Início
    ============================================================ */
 montarOpcoes();
+atualizarFreq();
 desenharOdd();
 desenharOutras();
 iniciarConversa();
