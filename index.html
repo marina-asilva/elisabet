@@ -370,6 +370,19 @@ table.numeros td { font-family: var(--mono); font-weight: 600; white-space: nowr
 /* pontilhado vermelho só quando a pessoa bate no limite */
 #campo-horiz.no-limite .grade, #campo-freq.no-limite .stepper { outline: 1px dashed var(--loss); outline-offset: 6px; border-radius: 4px; }
 
+/* ----- resultado: 4 caixas em destaque + 4 caixas menores ----- */
+.destaques.grandes, .destaques.menores { grid-template-columns: repeat(2, 1fr); }
+@media (min-width: 720px) {
+  .destaques.grandes { grid-template-columns: repeat(4, minmax(min-content, 1fr)); }
+  .destaques.menores { grid-template-columns: repeat(4, 1fr); }
+}
+.destaques.grandes .destaque { padding: 22px 16px; border: 2px solid var(--accent); min-height: 124px; justify-content: center; }
+.destaques.grandes .num { font-size: 32px; white-space: nowrap; }
+.destaques.grandes .rot { font-size: 15px; color: var(--text-2); }
+.destaques.menores .destaque { background: transparent; padding: 12px 14px; }
+.destaques.menores .num { font-size: 19px; }
+.destaques.menores .rot { font-size: 13px; }
+
 /* ----- computador: mais respiro ----- */
 @media (min-width: 720px) {
   .sim-intro h2 { font-size: 32px; }
@@ -1296,22 +1309,23 @@ function mostrarResultado(d) {
   el.innerHTML = `
     <div class="res-titulo">RESULTADO · ${esc(brlV(d.valor))} · ${esc(freqTxt)} · ${esc(anos(d.horiz))} · odd ${esc(num2(d.odd))}</div>
 
-    <div class="destaques">
-      <div class="destaque"><span class="num">${brl0.format(totalApostado)}</span><span class="rot">apostados no total (${d.n_apostas.toLocaleString("pt-BR")} apostas)</span></div>
-      <div class="destaque"><span class="num ${med < 0 ? "perda" : ""}">${med < 0 ? "−" : med > 0 ? "+" : ""}${brl0.format(Math.abs(med))}</span><span class="rot">resultado típico${info("É a <b>mediana</b>: o resultado do meio. Metade das pessoas simuladas terminou melhor que isso e metade terminou pior.")}</span></div>
-      <div class="destaque"><span class="num ${s.prob_perda >= 0.5 ? "perda" : ""}">${emCada10(s.prob_perda).replace(" cada", "")}</span><span class="rot">pessoas simuladas terminaram no prejuízo${info("Exatamente <b>" + pct(s.prob_perda, 1) + "</b> das " + d.trajetorias.toLocaleString("pt-BR") + " simulações terminaram no prejuízo.")}</span></div>
+    <div class="destaques grandes">
+      <div class="destaque"><span class="num">${brl0.format(totalApostado)}</span><span class="rot">apostados no total</span></div>
+      <div class="destaque"><span class="num">${d.n_apostas.toLocaleString("pt-BR")}</span><span class="rot">apostas</span></div>
+      <div class="destaque"><span class="num ${med < 0 ? "perda" : ""}">${med < 0 ? "−" : med > 0 ? "+" : ""}${brl0.format(Math.abs(med))}</span><span class="rot">${med < 0 ? "perda típica" : "resultado típico"}${info("É a <b>mediana</b>: o resultado do meio. Metade das pessoas simuladas terminou melhor que isso e metade terminou pior.")}</span></div>
+      <div class="destaque"><span class="num ${s.prob_perda >= 0.5 ? "perda" : ""}">${emCada10(s.prob_perda).replace(" cada", "")}</span><span class="rot">no prejuízo${info("Exatamente <b>" + pct(s.prob_perda, 1) + "</b> das " + d.trajetorias.toLocaleString("pt-BR") + " simulações terminaram no prejuízo.")}</span></div>
     </div>
 
-    <div class="res-texto">
-      <p>Apostando ${esc(brlV(d.valor))} ${esc(freqTxt)} durante ${esc(anos(d.horiz))}, você colocaria <strong>${brl0.format(totalApostado)}</strong> nas apostas. No resultado típico, terminaria com ${medTxt}.</p>
-      <p>Simulamos ${d.trajetorias.toLocaleString("pt-BR")} pessoas apostando desse jeito: <strong>${emCada10(s.prob_perda)}</strong> terminaram no prejuízo. Tirando os casos de mais azar e de mais sorte, 9 em cada 10 pessoas terminaram entre ${faixa(s.p5)} e ${faixa(s.p95)}.${info("Essa faixa vai do <b>percentil 5</b> ao <b>percentil 95</b>: 5% das simulações terminaram abaixo dela e 5% acima.")}</p>
-      <p>Se você investisse esse mesmo dinheiro rendendo 10% ao ano, teria <strong>${brl0.format(a.investido_final)}</strong>: ${brl0.format(a.rendimento)} a mais do que colocou.</p>
-      <p>Quanto mais tempo e mais vezes você aposta, mais pesa a parte que a casa fica pra ela: a perda média cresce junto com o número de apostas.</p>
+    <div class="destaques menores">
+      <div class="destaque"><span class="num">${pct(d.p)}</span><span class="rot">chance de ganhar cada aposta${info("Vem da odd, descontada a parte que a casa fica pra ela.")}</span></div>
+      <div class="destaque"><span class="num perda">${d.VE < 0 ? "−" : ""}${brl2.format(Math.abs(d.VE))}</span><span class="rot">quanto perde em média por aposta${info("Nome técnico: <b>valor esperado</b>.")}</span></div>
+      <div class="destaque"><span class="num perda">${d.VE_total < 0 ? "−" : ""}${brl0.format(Math.abs(d.VE_total))}</span><span class="rot">quanto perde em média no período${info("Nome técnico: <b>perda esperada</b> (valor esperado × número de apostas).")}</span></div>
+      <div class="destaque"><span class="num perda">${s.pior_queda_media < 0 ? "−" : ""}${brl0.format(Math.abs(s.pior_queda_media))}</span><span class="rot">pior momento${info("O saldo mais baixo que cada pessoa simulada chegou a ter no meio do caminho, em média. Em finanças: <b>queda máxima</b> (<i>drawdown</i>).")}</span></div>
     </div>
 
     <div class="grafico-caixa">
-      <h3>O dinheiro ao longo do tempo</h3>
-      <p class="sub">Quanto você teria, somando tudo o que colocou, em cada caminho. A faixa vermelha mostra onde terminaram 9 em cada 10 pessoas que apostaram.${info("A faixa vai do <b>percentil 5</b> ao <b>percentil 95</b> das simulações, e a linha vermelha é a <b>mediana</b> (o resultado típico).")}</p>
+      <h3>Outras possibilidades</h3>
+      <p class="sub">E se esse mesmo dinheiro fosse guardado ou investido, em vez de apostado?</p>
       <div class="legenda" aria-hidden="true">
         <span><i style="border-color:var(--accent)"></i>Investindo a 10% ao ano</span>
         <span><i style="border-color:var(--save);border-top-style:dashed"></i>Só guardando</span>
@@ -1320,21 +1334,6 @@ function mostrarResultado(d) {
       </div>
       <div id="grafico"></div>
     </div>
-
-    <div>
-      <table class="numeros">
-        <caption class="sr-only">Os números da simulação</caption>
-        <tbody>
-          <tr><th>Chance de acertar cada aposta<small>Vem da odd, descontada a parte que a casa fica pra ela.</small></th><td>${pct(d.p)}</td></tr>
-          <tr><th>Quanto você perde em média, por aposta${info("Nome técnico: <b>valor esperado</b>.")}<small>Se você repetisse essa aposta muitas e muitas vezes, esse seria o resultado médio de cada uma.</small></th><td>${d.VE < 0 ? "−" : ""}${brl2.format(Math.abs(d.VE))}</td></tr>
-          <tr><th>Quanto você perde em média, no período todo${info("Nome técnico: <b>perda esperada</b> (valor esperado × número de apostas).")}<small>A perda média por aposta × o número de apostas.</small></th><td>${d.VE_total < 0 ? "−" : ""}${brl0.format(Math.abs(d.VE_total))}</td></tr>
-          <tr><th>Resultado médio das pessoas simuladas${info("Isso é a <b>lei dos grandes números</b>: repetindo muitas vezes, a média dos resultados se aproxima da perda média esperada.")}<small>Fica perto da linha de cima: quanto mais apostas, mais a média aparece.</small></th><td>${s.media < 0 ? "−" : ""}${brl0.format(Math.abs(s.media))}</td></tr>
-          <tr><th>O quanto os resultados variam${info("Nome técnico: <b>desvio-padrão</b>. Mede o quanto os resultados se espalham em volta da média.")}<small>Quanto maior, mais imprevisível: umas pessoas perdem bem mais que a média, outras bem menos.</small></th><td>${brl0.format(s.dp)}</td></tr>
-          <tr><th>Pior momento, em média${info("Em finanças, uma medida parecida se chama <b>queda máxima</b> (<i>drawdown</i>).")}<small>O saldo mais baixo que cada pessoa simulada chegou a ter no meio do caminho.</small></th><td>${s.pior_queda_media < 0 ? "−" : ""}${brl0.format(Math.abs(s.pior_queda_media))}</td></tr>
-        </tbody>
-      </table>
-    </div>
-
 
     <details class="extra">
       <summary>Como essa simulação foi feita<span class="mais" aria-hidden="true">+</span></summary>
