@@ -189,6 +189,9 @@ button:disabled { cursor: not-allowed; }
 }
 .chip:hover:not(:disabled) { border-color: var(--accent); }
 .chip:disabled { opacity: .45; }
+/* atalho para o simulador logo na saudação (nos testes, 2 de 5 não acharam o simulador sozinhos) */
+.chip.chip-sim { display: inline-flex; align-items: center; gap: 8px; border-color: var(--accent); color: var(--accent); }
+.chip.chip-sim svg { flex: none; }
 
 .carregando { display: flex; flex-direction: column; gap: 8px; }
 .barra-indef { position: relative; height: 4px; width: min(220px, 60%); background: var(--surface-2); border-radius: 2px; overflow: hidden; }
@@ -858,6 +861,12 @@ function iniciarConversa() {
     b.addEventListener("click", () => perguntar(completa));
     sug.appendChild(b);
   });
+  // atalho direto para o simulador
+  const bs = document.createElement("button");
+  bs.type = "button"; bs.className = "chip chip-sim";
+  bs.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Simular o meu jeito de apostar';
+  bs.addEventListener("click", () => abrirAba("sim"));
+  sug.appendChild(bs);
   el.appendChild(sug);
 }
 
