@@ -1043,6 +1043,18 @@ function converterParametros(p) {
     (log ? Math.abs(Math.log(b) - Math.log(x)) < Math.abs(Math.log(a) - Math.log(x))
          : Math.abs(b - x) < Math.abs(a - x)) ? b : a);
 
+  // A pessoa contou só quanto gasta por dia/semana/mês ("aposto 3 mil por mês"), sem o valor de cada aposta.
+  const UN_OK = ["dia", "semana", "mes"];
+  if (!p.valor && p.gasto_total && UN_OK.includes(p.gasto_periodo)) {
+    p = Object.assign({}, p);
+    if (p.apostas && p.periodo_freq === p.gasto_periodo) {
+      p.valor = Math.round(p.gasto_total / p.apostas * 100) / 100;
+      notas.push("Valor: dividimos o gasto que você contou (" + brlV(p.gasto_total) + " por " + nomeUnid[p.gasto_periodo] + ") pelo número de apostas, então cada aposta ficou em " + brlV(p.valor) + ".");
+    } else {
+      p.valor = p.gasto_total; p.apostas = 1; p.periodo_freq = p.gasto_periodo;
+      notas.push("Você contou quanto gasta por " + nomeUnid[p.gasto_periodo] + " (" + brlV(p.gasto_total) + "), mas não em quantas apostas. Usamos 1 aposta de " + brlV(p.gasto_total) + " por " + nomeUnid[p.gasto_periodo] + ". A perda média é a mesma de dividir em várias apostas; o que muda é o quanto os resultados variam. Se souber quantas apostas faz, ajuste aqui.");
+    }
+  }
   if (p.valor) {
     out.valor = Math.min(VALOR_MAX, Math.round(p.valor * 100) / 100);
     if (out.valor !== p.valor) notas.push("Valor: o simulador vai até " + brl0.format(VALOR_MAX) + " por aposta, então usamos esse valor.");
