@@ -167,7 +167,11 @@ button:disabled { cursor: not-allowed; }
 .quem { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: .08em; color: var(--accent); }
 .texto { color: var(--text-2); }
 .texto p { margin: 0 0 10px; } .texto p:last-child { margin-bottom: 0; }
-.texto p:first-child { color: var(--text); font-weight: 700; font-size: 18px; line-height: 1.35; }
+/* resposta em blocos: cada pergunta tem o seu destaque (antes só o 1º parágrafo ficava em negrito) */
+.texto .bloco + .bloco { margin-top: 14px; }
+.texto p.destaque-resp, .texto.legado p:first-child { color: var(--text); font-weight: 700; font-size: 18px; line-height: 1.35; }
+.texto .fontes { margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12px; line-height: 1.45; color: var(--faint); }
+.texto .fontes b { font-family: var(--mono); font-weight: 600; letter-spacing: .06em; color: var(--muted); margin-right: 4px; }
 .texto strong { color: var(--text); }
 .texto ul { margin: 0 0 10px; padding-left: 20px; }
 .texto li { margin-bottom: 4px; }
@@ -409,7 +413,7 @@ table.numeros td { font-family: var(--mono); font-weight: 600; white-space: nowr
 /* ----- computador: mais respiro ----- */
 @media (min-width: 720px) {
   .sim-intro h2 { font-size: 32px; }
-  .texto p:first-child { font-size: 20px; }
+  .texto p.destaque-resp, .texto.legado p:first-child { font-size: 20px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
@@ -833,10 +837,10 @@ function addUser(texto) {
   el.className = "msg-user"; el.textContent = texto;
   lista.appendChild(el); rolarFim();
 }
-function addBot(html) {
+function addBot(html, legado = false) {
   const el = document.createElement("div");
   el.className = "msg-bot";
-  el.innerHTML = '<span class="quem">ELISABET</span><div class="texto">' + html + "</div>";
+  el.innerHTML = '<span class="quem">ELISABET</span><div class="texto' + (legado ? " legado" : "") + '">' + html + "</div>";
   lista.appendChild(el); rolarFim();
   return el;
 }
@@ -873,7 +877,7 @@ function adicionarCopiar(el) {
 function iniciarConversa() {
   lista.innerHTML = "";
   historico = [];
-  const el = addBot(formatar(SAUDACAO));
+  const el = addBot(formatar(SAUDACAO), true);
   const sug = document.createElement("div");
   sug.className = "sugestoes";
   SUGESTOES.forEach(([curta, completa]) => {
@@ -935,7 +939,7 @@ async function perguntar(texto) {
     }
     const resposta = dados && dados.resposta ? String(dados.resposta) : "";
     if (!resposta) throw new Error("resposta vazia");
-    adicionarCopiar(addBot(formatar(resposta)));
+    adicionarCopiar(addBot(...montarResposta(dados, resposta)));
     historico.push({ papel: "Usuário", texto }, { papel: "Assistente", texto: resposta });
     if (dados.sugerir_simulacao && dados.parametros) mostrarCartaoSim(dados.parametros);
   } catch (e) {
@@ -947,6 +951,19 @@ async function perguntar(texto) {
     clearTimeout(timer);
     travar(false);
   }
+}
+
+// Resposta em blocos (um por pergunta: destaque + detalhe) e fontes pequenas no fim.
+// Se o n8n mandar só o texto (formato antigo), mostra como antes.
+function montarResposta(dados, resposta) {
+  const blocos = Array.isArray(dados.blocos) ? dados.blocos.filter(b => b && (b.destaque || b.detalhe)) : [];
+  if (!blocos.length) return [formatar(resposta), true];
+  let html = blocos.map(b => '<div class="bloco">' +
+    (b.destaque ? '<p class="destaque-resp">' + esc(String(b.destaque).replace(/\*\*/g, "")) + "</p>" : "") +
+    (b.detalhe ? formatar(b.detalhe) : "") + "</div>").join("");
+  const fontes = Array.isArray(dados.fontes) ? dados.fontes.filter(Boolean) : [];
+  if (fontes.length) html += '<div class="fontes"><b>FONTES</b>' + fontes.map(esc).join("; ") + "</div>";
+  return [html, false];
 }
 
 function mostrarIndisponivel(texto, msg) {
