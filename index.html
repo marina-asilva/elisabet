@@ -105,6 +105,14 @@ button:disabled { cursor: not-allowed; }
 }
 .btn-linha:hover { color: var(--text); border-color: var(--muted); }
 .btn-linha.destaque { border-color: var(--accent); color: var(--accent); }
+.btn-linha.ok { border-color: var(--accent); color: var(--accent); }
+/* rótulo curto no celular, pra caber os dois botões do topo ao lado da logo */
+.rot-curta { display: none; }
+@media (max-width: 479px) {
+  .acoes-topo .rot-longa { display: none; }
+  .acoes-topo .rot-curta { display: inline; }
+  .acoes-topo .btn-linha { padding: 0 10px; gap: 6px; }
+}
 
 /* ----- depois de "Começar": vira cabeçalho compacto ----- */
 .entrou .topo { height: 68px; padding: 0 16px; gap: 0; border-bottom: 1px solid var(--line); }
@@ -420,9 +428,13 @@ table.numeros td { font-family: var(--mono); font-weight: 600; white-space: nowr
         <span class="logo-t" aria-hidden="true"><span class="elisa">ELISA</span><span class="bet">BET</span></span>
       </div>
       <div class="acoes-topo">
+        <button class="btn-linha" id="btn-copiar-conversa" type="button" title="Copia a conversa inteira (suas perguntas e as respostas da Elisabet)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          <span class="rot"><span class="rot-longa">Copiar conversa</span><span class="rot-curta">Copiar</span></span>
+        </button>
         <button class="btn-linha" id="btn-nova" type="button" title="Apaga a conversa e começa de novo">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-          <span>Nova conversa</span>
+          <span><span class="rot-longa">Nova conversa</span><span class="rot-curta">Nova</span></span>
         </button>
       </div>
     </div>
@@ -939,6 +951,35 @@ entrada.addEventListener("keydown", e => {
 });
 function ajustarAltura() { entrada.style.height = "auto"; entrada.style.height = Math.min(entrada.scrollHeight, 140) + "px"; }
 entrada.addEventListener("input", ajustarAltura);
+
+/* ----- Botão "Copiar conversa": junta perguntas e respostas num texto só ----- */
+function textoDaConversa() {
+  const partes = [];
+  lista.querySelectorAll(".msg-user, .msg-bot:not(.carregando)").forEach(el => {
+    if (el.classList.contains("msg-user")) partes.push("Você: " + el.textContent.trim());
+    else {
+      const t = el.querySelector(".texto");
+      if (t) partes.push("Elisabet: " + t.innerText.trim());
+    }
+  });
+  if (!lista.querySelector(".msg-user")) return "";   // só a saudação: nada pra copiar
+  const agora = new Date().toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+  return "Conversa com a Elisabet (" + agora + ")\n\n" + partes.join("\n\n");
+}
+(() => {
+  const btn = $("#btn-copiar-conversa"), rot = btn.querySelector(".rot"), original = rot.innerHTML;
+  let timer;
+  btn.addEventListener("click", async () => {
+    const texto = textoDaConversa();
+    const ok = texto ? await copiarTexto(texto) : false;
+    clearTimeout(timer);
+    btn.classList.toggle("ok", ok);
+    // texto longo no computador, curto no celular (pra não empurrar o "Nova" pra fora da tela)
+    const [longo, curto] = !texto ? ["Ainda não há conversa", "Vazia"] : ok ? ["Copiada!", "Ok!"] : ["Não deu pra copiar", "Erro"];
+    rot.innerHTML = '<span class="rot-longa">' + longo + '</span><span class="rot-curta">' + curto + "</span>";
+    timer = setTimeout(() => { btn.classList.remove("ok"); rot.innerHTML = original; }, 2000);
+  });
+})();
 
 $("#btn-nova").addEventListener("click", () => {
   if (ocupado) return;
