@@ -1521,7 +1521,21 @@ function mostrarResultado(d) {
     </details>`;
   el.hidden = false;
   desenharGrafico(d);
+  registrarSimulacaoNoChat(d, freqTxt, totalApostado);
   setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+}
+
+/* ----- o chat fica sabendo do resultado (para responder "vou perder R$ X com certeza?") ----- */
+function registrarSimulacaoNoChat(d, freqTxt, totalApostado) {
+  const s = d.simulado, sinal = v => (v < 0 ? "perda de " : v > 0 ? "lucro de " : "") + brl0.format(Math.abs(v));
+  const texto = "O usuário rodou o simulador com " + brlV(d.valor) + " por aposta, " + freqTxt + ", por " + anos(d.horiz) +
+    ", odd " + num2(d.odd) + ". Resultado: " + d.n_apostas.toLocaleString("pt-BR") + " apostas e " + brl0.format(totalApostado) +
+    " apostados no total; resultado típico (pessoa do meio da fila) = " + sinal(s.mediana) +
+    "; " + emCada10(s.prob_perda) + " pessoas simuladas terminaram no prejuízo; perda média por aposta = " + brl2.format(Math.abs(d.VE)) +
+    "; perda média no período = " + brl0.format(Math.abs(d.VE_total)) +
+    "; 9 em cada 10 pessoas terminaram entre " + sinal(s.p5) + " e " + sinal(s.p95) +
+    "; investindo o mesmo dinheiro a 10% ao ano, teria " + brl0.format(d.alternativo.investido_final) + ". Esses números são de uma simulação, não uma previsão.";
+  historico.push({ papel: "Resultado do simulador", texto });
 }
 
 /* ============================================================
